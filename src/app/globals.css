@@ -13,4 +13,26 @@
   --color-brand-100: #B5D9B04D; /* 30% opacity */
   --color-danger: #e3342f;
 
+  --font-primary: 'Playfair Display';
+  --font-secondary: 'Inter';
+
+}
+
+html {
+  @apply font-secondary;
+}
+
+.btn {
+  @apply rounded-lg font-semibold py-3 bg-brand-900 text-white shadow-md transition duration-300;
+}
+
+
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('/fonts/PlayfairDisplay-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
 }
