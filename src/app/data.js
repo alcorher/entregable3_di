@@ -1,8 +1,7 @@
 export const listUsers = [
-  [
-    {
-      id: 1,
-      name: "Chicote",
+  {
+    id: 1,
+    name: "Chicote",
       about: "Famous chef and TV personality",
       image:
         "https://imgs.search.brave.com/CM9dCKfA9Wa0sdTIxbTCkj-hrAk1Uoa6d8pvYzsJtHk/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvNjM1/MjQ2MTgwL2VzL2Zv/dG8vbWFkcmlkLXNw/YWluLXNwYW5pc2gt/Y2hlZi1hbGJlcnRv/LWNoaWNvdGUtcHJl/c2VudHMtdGhlLXRv/cC1jaGVmLXR2LXNo/b3ctYXQta2l0Y2hl/bi1jbHViLW9uLmpw/Zz9zPTYxMng2MTIm/dz0wJms9MjAmYz1t/d1BTYTgwYUhaeHRV/aHZraVBIU0dUSzJ2/LThQOE56ZUZFNjUt/M1hSUDY4PQ",
@@ -146,7 +145,6 @@ export const listUsers = [
       email: "chiquito@example.com",
       password: "chiquito123",
     },
-  ],
 ];
 
 export const listRecipes = [
