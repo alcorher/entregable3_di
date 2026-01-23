@@ -13,11 +13,13 @@ export default function Login() {
       return;
     }
     const user = listUsers.find(
-      (user) => user.mail === mail && user.password === password,
+      (user) => user.email === mail && user.password === password,
     );
     if (!user) {
       alert("Correo electrónico o contraseña incorrectos.");
       return;
+    } else {
+      alert(`¡Bienvenido de nuevo, ${user.name}!`);
     }
   };
 
