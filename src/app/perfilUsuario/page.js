@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { listUsers } from "../data";
 
-//El usuario inicial es Chicote
+// El usuario inicial es Chicote
 const initialUser = listUsers[0];
 
 export default function perfilUsuario({}) {
@@ -15,7 +15,7 @@ export default function perfilUsuario({}) {
 
   return (
     <>
-      <div>
+      <div className="flex flex-col md:flex-row gap-4 justify-center mt-6">
         <button onClick={() => setOwnUser(!ownUser)} disabled={admin}>
           {ownUser ? "Ver como otro usuario" : "Ver como dueño del perfil"}
         </button>
@@ -23,42 +23,55 @@ export default function perfilUsuario({}) {
           {admin ? "Desactivar modo admin" : "Activar modo admin"}
         </button>
       </div>
+
       {isEditing ? (
-        <div>
-          <h2>Editar Perfil</h2>
+        <div className="max-w-xl mx-auto mt-10">
+          <h2 className="text-2xl font-bold mb-6 text-center">Editar Perfil</h2>
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
               setUser({ ...user, name: editName, about: editAbout });
               setIsEditing(false);
             }}
+            className="flex flex-col gap-4"
           >
-            <label>
+            <label className="flex flex-col gap-2">
               Foto de perfil:
               <input type="file" />
             </label>
 
-            <label>
+            <label className="flex flex-col gap-2">
               Nombre:
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
+                className="border rounded p-2"
               />
             </label>
-            <br />
-            <label>
+
+            <label className="flex flex-col gap-2">
               Sobre mí:
               <textarea
                 value={editAbout}
                 onChange={(e) => setEditAbout(e.target.value)}
+                className="border rounded p-2"
               ></textarea>
             </label>
-            <br />
-            <button type="submit">Guardar</button>
-            <button type="button" onClick={() => setIsEditing(false)}>
-              Cancelar
-            </button>
+
+            <div className="flex flex-col md:flex-row gap-4 mt-4">
+              <button type="submit" className="btn w-full md:w-1/2">
+                Guardar
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="btn w-full md:w-1/2"
+              >
+                Cancelar
+              </button>
+            </div>
           </form>
         </div>
       ) : (
@@ -68,22 +81,28 @@ export default function perfilUsuario({}) {
             src={user.image}
             alt={user.name}
           />
+
           <h1 className="font-primary font-bold text-5xl text-brand-900 p-10 px-15 text-center">
             {user.name}
           </h1>
+
           <div className="mx-auto w-5/6 px-15">
-            <h2 className="font-primary font-semibold text-3xl text-brand-900 mb-10 ">
+            <h2 className="font-primary font-semibold text-3xl text-brand-900 mb-10">
               Sobre mí
             </h2>
-            <p className="text-brand-900 ">{user.about}</p>
-            <div className="flex gap-6 my-10 justify-center max-w-3xl mx-auto">
-              <a href="/listaRecetas" className="w-1/2">
-                <button className="btn w-full py-3">Lista de recetas</button>
+
+            <p className="text-brand-900">{user.about}</p>
+
+            <div className="flex flex-col md:flex-row gap-6 my-10 justify-center max-w-3xl mx-auto">
+              <a href="/listaRecetas" className="w-full md:w-1/2">
+                <button className="btn w-full py-3">
+                  Lista de recetas
+                </button>
               </a>
 
               {ownUser && (
                 <button
-                  className="btn w-1/2 py-3"
+                  className="btn w-full md:w-1/2 py-3"
                   onClick={() => setIsEditing(true)}
                 >
                   Editar perfil
@@ -91,7 +110,9 @@ export default function perfilUsuario({}) {
               )}
 
               {admin && (
-                <button className="rounded-full font-semibold text-white shadow-md transition duration-300 bg-red-700 w-1/2 py-3">Banear usuario</button>
+                <button className="rounded-full font-semibold text-white shadow-md transition duration-300 bg-red-700 w-full md:w-1/2 py-3">
+                  Banear usuario
+                </button>
               )}
             </div>
           </div>

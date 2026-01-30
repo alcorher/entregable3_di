@@ -1,35 +1,83 @@
 import Image from "next/image";
 
-
 export default function Home() {
   return (
     <>
-      <header>
+      <header className="bg-brand-900 px-5 py-3 flex justify-between text-white">
         <img
           src="/images/logo.png"
           alt="Sazón Comunitario Logo"
-          height="80px"
+          className="h-10"
         />
         <nav className="">
-          <button>Registrate</button>
-          <button>Inicia sesión</button>
+          <button className=" text-sm rounded-full font-semibold py-3 bg-brand-600 text-brand-900 shadow-md transition duration-300 cursor-pointer px-5 mx-3">
+            Registrate
+          </button>
+          <button className=" text-sm rounded-full font-semibold py-3 bg-brand-600 text-brand-900 shadow-md transition duration-300 cursor-pointer px-5">
+            Inicia sesión
+          </button>
         </nav>
       </header>
 
-      <section className="bg-primary">
-        <div>
-          <h2>Descubre recetas deliciosas y conecta con otros chefs</h2>
-          <p>
-            Sazón Comunitario es tu lugar para encontrar recetas caseras,
-            compartir tus propias creaciones y unirte a una comunidad de
-            cocineros apasionados.
-          </p>
+      <section className="relative w-full lg:h-[70vh] min-h-[500px] py-20 lg:py-0">
+  {/* Background */}
+  <img
+    src="/images/landingHero.png"
+    alt="Hero background"
+    className="absolute inset-0 w-full h-full object-cover"
+  />
+
+  {/* Overlay */}
+  <div className="absolute inset-0 bg-black/50"></div>
+
+  {/* Content */}
+  <div className="relative z-10 max-w-7xl mx-auto h-full px-6 flex items-center">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 w-full text-white">
+
+      {/* LEFT */}
+      <div className="lg:px-10 flex flex-col justify-around">
+        <div className="text-center scale-125">
+          <h1 className="font-primary text-brand-600 font-bold leading-none
+                       text-5xl sm:text-6xl md:text-7xl lg:text-8xl">
+          SAZÓN
+        </h1>
+
+        <p className="font-secondary text-brand-600 tracking-[0.35em] mt-3 text-lg">
+          COMUNITARIO
+        </p>
         </div>
-        <div>
-          <p>Donde a tus recetas no les falta sazón</p>
-          <button>Unirte ahora</button>
-        </div>
-      </section>
+
+        <h2 className="mt-6 text-2xl font-semibold">
+          Descubre recetas deliciosas y conecta con otros chefs
+        </h2>
+
+        <p className="mt-4 max-w-lg mx-auto lg:mx-0 text-white/90">
+          Sazón Comunitario es tu lugar para encontrar recetas caseras,
+          compartir tus propias creaciones y unirte a una comunidad de
+          cocineros apasionados.
+        </p>
+      </div>
+
+      {/* RIGHT */}
+      <div className="flex flex-col items-center justify-around text-center gap-6">
+        <img
+          src="/images/logoNoText.png"
+          alt="Logo"
+          className="h-32 lg:h-65"
+        />
+
+        <p className="font-primary text-2xl">
+          Donde a tus recetas no les falta sazón
+        </p>
+
+        <button className="btn px-8 py-3 text-sm">
+          Únete ahora
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
 
       <section>
         <div>
