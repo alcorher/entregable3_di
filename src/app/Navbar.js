@@ -1,8 +1,10 @@
 "use client";
 import { usePathname } from "next/navigation";
-//EL ICONO DE LA LUPA ES UN ICONO DE BOOTSTRAP, UNA VEZ LO IMPLEMENTEMOS, CAMBIARLO POR EL CODIGO DEL ICONO (<i class="bi bi-search"></i>)
+import { useState } from "react";
+
 export default function NavBar() {
   const location = usePathname();
+  const [open, setOpen] = useState(false);
 
   if (
     location === "/inicioSesion" ||
@@ -13,72 +15,50 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="navbar bg-brand-900 px-5 py-3">
-      <ul className="flex justify-between items-center text-white">
-        <li>
-          {" "}
-          <a href="/">
-            <img src="/images/logo.png" className="h-10 w-auto ps-2" />
-          </a>{" "}
-        </li>
-        <li>
-          <form className=" focus:ring-0 focus:outline-none bg-white rounded-full flex items-center border-2 border-brand-600">
-            <select 
-              className="mx-3 bg-white text-brand-900 p-1.5 rounded-s-full focus:outline-none focus:ring-0 appearance-none "
-              name="searchOption"
-              defaultValue="Recetas"
-              id="searchOption"
-            >
-              <option className="text-brand-900 " value="Recetas">Recetas</option>
-              <option className="text-brand-900" value="Usuarios">Usuarios</option>
-            </select>
-            <input type="text" placeholder="Buscar" className="bg-white text-brand-900 p-1.5 focus:outline-none focus:ring-0 border-s-2 border-brand-600" />
-            <button type="submit" className="text-brand-900  p-1.5  px-4 cursor-pointer">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                fill="currentColor"
-                className="bi bi-search text-brand-900 "
-                viewBox="0 0 16 16"
-              >
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
-              </svg>
-            </button>
-          </form>
-        </li>
-        <li className="flex gap-6 items-center pe-2">
+    <nav className="bg-brand-900 text-white px-5 py-3">
+      {/* TOP BAR */}
+      <div className="flex justify-between items-center">
+        {/* Logo */}
+        <a href="/">
+          <img src="/images/logo.png" className="h-10 w-auto ps-2" />
+        </a>
+
+        {/* Desktop Search */}
+        <form className="hidden md:flex bg-white rounded-full items-center border-2 border-brand-600">
+          <select
+            className="mx-3 bg-white text-brand-900 p-1.5 rounded-s-full focus:outline-none appearance-none"
+            name="searchOption"
+            defaultValue="Recetas"
+          >
+            <option value="Recetas">Recetas</option>
+            <option value="Usuarios">Usuarios</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Buscar"
+            className="bg-white text-brand-900 p-1.5 focus:outline-none border-s-2 border-brand-600"
+          />
+
+          <button type="submit" className="text-brand-900 p-1.5 px-4">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+            </svg>
+          </button>
+        </form>
+
+        {/* Desktop Icons */}
+        <div className="hidden md:flex gap-6 items-center pe-2">
           <a href="/nuevaReceta">
-            <i>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="25"
-                height="25"
-                fill="currentColor"
-                className="h-8 w-auto bi bi-plus-circle-fill"
-                viewBox="0 0 16 16"
-              >
-                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z" />
-              </svg>
-            </i>
+            <svg width="25" height="25" fill="currentColor" className="h-8 w-auto" viewBox="0 0 16 16">
+              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z" />
+            </svg>
           </a>
 
           <a href="/favoritos">
-            <i>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="25"
-                height="25"
-                fill="currentColor"
-                className="h-8 w-auto bi bi-heart-fill"
-                viewBox="0 0 16 16"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314"
-                />
-              </svg>
-            </i>
+            <svg width="25" height="25" fill="currentColor" className="h-8 w-auto" viewBox="0 0 16 16">
+              <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314" />
+            </svg>
           </a>
 
           <a href="/perfilUsuario">
@@ -88,8 +68,51 @@ export default function NavBar() {
               className="rounded-full h-10 w-10 object-cover"
             />
           </a>
-        </li>
-      </ul>
+        </div>
+
+        {/* Hamburger Button */}
+        <button
+          className="md:hidden flex flex-col gap-1"
+          onClick={() => setOpen(!open)}
+        >
+          <span className="w-6 h-0.5 bg-white"></span>
+          <span className="w-6 h-0.5 bg-white"></span>
+          <span className="w-6 h-0.5 bg-white"></span>
+        </button>
+      </div>
+
+      {/* MOBILE MENU */}
+      {open && (
+        <div className="md:hidden mt-4 flex flex-col gap-4">
+          {/* Mobile Search */}
+          <form className="bg-white rounded-full flex items-center border-2 border-brand-600">
+            <select
+              className="mx-3 bg-white text-brand-900 p-1.5 rounded-s-full focus:outline-none appearance-none"
+              defaultValue="Recetas"
+            >
+              <option value="Recetas">Recetas</option>
+              <option value="Usuarios">Usuarios</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Buscar"
+              className="bg-white text-brand-900 p-1.5 focus:outline-none border-s-2 border-brand-600 w-full"
+            />
+
+            <button type="submit" className="text-brand-900 p-1.5 px-4">
+             <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+            </svg>
+            </button>
+          </form>
+
+          {/* Mobile Links */}
+          <a href="/nuevaReceta" className="py-2 border-b border-white/20">Nueva Receta</a>
+          <a href="/favoritos" className="py-2 border-b border-white/20">Favoritos</a>
+          <a href="/perfilUsuario" className="py-2">Perfil</a>
+        </div>
+      )}
     </nav>
   );
 }
