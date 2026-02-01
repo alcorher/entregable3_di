@@ -14,11 +14,12 @@ export default function perfilUsuario({}) {
   const [editAbout, setEditAbout] = useState(user.about);
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row gap-4 justify-center mt-6">
+    <div className="max-w-5/6 mx-auto">
+      <div >
         <button onClick={() => setOwnUser(!ownUser)} disabled={admin}>
           {ownUser ? "Ver como otro usuario" : "Ver como dueño del perfil"}
         </button>
+        <br/>
         <button onClick={() => setAdmin(!admin)} disabled={ownUser}>
           {admin ? "Desactivar modo admin" : "Activar modo admin"}
         </button>
@@ -26,7 +27,7 @@ export default function perfilUsuario({}) {
 
       {isEditing ? (
         <div className="max-w-xl mx-auto mt-10">
-          <h2 className="text-2xl font-bold mb-6 text-center">Editar Perfil</h2>
+          <h2 className="text-2xl font-bold mb-6 text-center font-primary text-brand-900">Editar Perfil</h2>
 
           <form
             onSubmit={(e) => {
@@ -34,11 +35,12 @@ export default function perfilUsuario({}) {
               setUser({ ...user, name: editName, about: editAbout });
               setIsEditing(false);
             }}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-4 text-brand-900"
           >
             <label className="flex flex-col gap-2">
               Foto de perfil:
-              <input type="file" />
+              <input type="file" className="border border-brand-900 p-2 rounded-lg w-fit"
+               />
             </label>
 
             <label className="flex flex-col gap-2">
@@ -47,7 +49,7 @@ export default function perfilUsuario({}) {
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="border rounded p-2"
+                className="border border-brand-900 rounded p-2"
               />
             </label>
 
@@ -56,7 +58,7 @@ export default function perfilUsuario({}) {
               <textarea
                 value={editAbout}
                 onChange={(e) => setEditAbout(e.target.value)}
-                className="border rounded p-2"
+                className="border border-brand-900 rounded p-2 h-auto"
               ></textarea>
             </label>
 
@@ -118,6 +120,6 @@ export default function perfilUsuario({}) {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -72,22 +72,22 @@ export default function Home() {
         </div>
       </section>
 <section className="max-w-5/6 md:max-w-4/6 mx-auto my-12 px-4">
-  <div className="flex flex-col md:flex-row rounded-3xl overflow-hidden shadow-lg">
+  <div className="flex flex-col md:flex-row rounded-3xl overflow-hidden shadow-lg border-brand-900/50 border-2">
     
     <div className="w-full md:w-1/2 h-96 md:h-auto relative">
       <img
-        src="/images/food/placeHolder.png"
+        src="/images/carrillada.png"
         alt="Carrillada de Cerdo"
         className="absolute inset-0 w-full h-full object-cover"
       />
     </div>
    
-    <div className="w-full md:w-1/2 bg-[#e2ede2] p-10 md:p-14 flex flex-col justify-center">
-      <h3 className="text-4xl font-serif text-[#2a4a2b] mb-6">
+    <div className="w-full md:w-1/2 bg-brand-600 p-10 md:p-14  flex flex-col justify-center">
+      <h3 className="text-4xl font-serif text-brand-900 mb-6">
         Carrillada de Cerdo
       </h3>
       
-      <div className="text-[#3c5c3d] text-base leading-relaxed space-y-4 mb-8">
+      <div className="text-brand-900 text-base leading-relaxed space-y-4 mb-8">
         <p>
           La carrillada de cerdo es un corte de carne muy popular que se
           extrae de la zona de las mejillas del cerdo. Su carne es jugosa,
@@ -101,7 +101,7 @@ export default function Home() {
         </p>
       </div>
 
-      <button className="bg-[#355636] text-white font-medium py-3 px-8 rounded-full w-fit hover:bg-[#2a452b] transition-colors shadow-sm">
+      <button className="bg-brand-900 text-white font-medium py-3 px-8 rounded-full w-fit shadow-sm cursor-pointer hover:scale-105 duration-300 transition-all">
         Descubre como hacerlo tu mismo
       </button>
     </div>
@@ -121,7 +121,7 @@ export default function Home() {
       <p className="flex-grow">Aquí encontré las recetas que usé para ganar masterchef.</p>
       <div className="flex mt-2 items-center">
         <img 
-          src="/images/food/placeHolder.png" 
+          src="/images/arnau.png" 
           alt="Arnau" 
           className="h-10 w-10 object-cover rounded-full mr-4" 
         />
@@ -136,7 +136,7 @@ export default function Home() {
       </p>
       <div className="flex mt-2 items-center">
         <img 
-          src="/images/food/placeHolder.png" 
+          src="/images/gertru.png" 
           alt="Gertrudis" 
           className="h-10 w-10 object-cover rounded-full mr-4" 
         />
@@ -149,7 +149,7 @@ export default function Home() {
       <p className="flex-grow">Encuentro recetas rápidas y fáciles en tan solo un click.</p>
       <div className="flex mt-2 items-center">
         <img 
-          src="/images/food/placeHolder.png" 
+          src="/images/diego.png" 
           alt="Diego" 
           className="h-10 w-10 object-cover rounded-full mr-4" 
         />
