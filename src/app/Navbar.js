@@ -16,14 +16,11 @@ export default function NavBar() {
 
   return (
     <nav className="bg-brand-900 text-white px-5 py-3">
-      {/* TOP BAR */}
       <div className="flex justify-between items-center">
-        {/* Logo */}
-        <a href="/">
+          <a href="/">
           <img src="/images/logo.png" className="h-10 w-auto ps-2" />
         </a>
 
-        {/* Desktop Search */}
         <form className="hidden md:flex bg-white rounded-full items-center border-2 border-brand-600">
           <select
             className="mx-3 bg-white text-brand-900 p-1.5 rounded-s-full focus:outline-none appearance-none"
@@ -47,7 +44,6 @@ export default function NavBar() {
           </button>
         </form>
 
-        {/* Desktop Icons */}
         <div className="hidden md:flex gap-6 items-center pe-2">
           <a href="/nuevaReceta">
             <svg width="25" height="25" fill="currentColor" className="h-8 w-auto" viewBox="0 0 16 16">
@@ -70,7 +66,6 @@ export default function NavBar() {
           </a>
         </div>
 
-        {/* Hamburger Button */}
         <button
           className="md:hidden flex flex-col gap-1"
           onClick={() => setOpen(!open)}
@@ -81,10 +76,8 @@ export default function NavBar() {
         </button>
       </div>
 
-      {/* MOBILE MENU */}
       {open && (
         <div className="md:hidden mt-4 flex flex-col gap-4">
-          {/* Mobile Search */}
           <form className="bg-white rounded-full flex items-center border-2 border-brand-600">
             <select
               className="mx-3 bg-white text-brand-900 p-1.5 rounded-s-full focus:outline-none appearance-none"
@@ -107,7 +100,6 @@ export default function NavBar() {
             </button>
           </form>
 
-          {/* Mobile Links */}
           <a href="/nuevaReceta" className="py-2 border-b border-white/20">Nueva Receta</a>
           <a href="/favoritos" className="py-2 border-b border-white/20">Favoritos</a>
           <a href="/perfilUsuario" className="py-2">Perfil</a>
