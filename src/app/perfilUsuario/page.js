@@ -1,32 +1,101 @@
 "use client";
-import { useState } from "react";
-import { listUsers } from "../data";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-// El usuario inicial es Chicote
-const initialUser = listUsers[0];
+function PerfilContent() {
+  const searchParams = useSearchParams();
+  const userIdFromUrl = searchParams.get("userId");
 
-export default function perfilUsuario({}) {
-  const [user, setUser] = useState(initialUser);
-  const [ownUser, setOwnUser] = useState(true);
+  const [user, setUser] = useState({ id: "", nombre: "", sobre_mi: "", avatar_url: "", bloqueado: false });
+  const [ownUser, setOwnUser] = useState(false);
   const [admin, setAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(user.name);
-  const [editAbout, setEditAbout] = useState(user.about);
+  const [editName, setEditName] = useState("");
+  const [editAbout, setEditAbout] = useState("");
 
   const labelClass = "block text-sm font-bold text-brand-900 mb-2 font-primary";
-  const inputClass =
-    "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
+  const inputClass = "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
+
+  useEffect(() => {
+    async function fetchPerfil() {
+      try {
+        const endpoint = userIdFromUrl ? `/api/perfil?userId=${userIdFromUrl}` : "/api/perfil";
+        const res = await fetch(endpoint);
+        
+        if (res.ok) {
+          const data = await res.json();
+          setUser({
+            id: data.id,
+            nombre: data.nombre,
+            sobre_mi: data.sobre_mi || "Este usuario aún no ha escrito nada sobre sí.",
+            avatar_url: data.avatar_url || "/images/gertru.png",
+            bloqueado: data.bloqueado
+          });
+          setOwnUser(data.isOwnProfile);
+          setAdmin(data.currentUserIsAdmin); 
+          setEditName(data.nombre);
+          setEditAbout(data.sobre_mi || "");
+        } else {
+          if (!userIdFromUrl) window.location.href = "/inicioSesion";
+        }
+      } catch (error) {
+        console.error("Error al cargar perfil");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPerfil();
+  }, [userIdFromUrl]);
+
+  const guardarCambios = async (e) => {
+    e.preventDefault();
+    const res = await fetch("/api/perfil", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: editName, sobre_mi: editAbout }),
+    });
+
+    if (res.ok) {
+      setUser({ ...user, nombre: editName, sobre_mi: editAbout });
+      setIsEditing(false);
+    } else {
+      alert("Error al guardar los cambios.");
+    }
+  };
+
+  const banearUsuario = async () => {
+    const accion = user.bloqueado ? 'desbloquear' : 'bloquear';
+    const confirmacion = confirm(`¿Estás seguro de que quieres ${accion} a este usuario?`);
+    
+    if (!confirmacion) return;
+
+    const res = await fetch("/api/perfil/bloquear", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetUserId: user.id, bloqueado: !user.bloqueado }),
+    });
+
+    if (res.ok) {
+      setUser({ ...user, bloqueado: !user.bloqueado });
+      alert(`Usuario ${!user.bloqueado ? 'bloqueado' : 'desbloqueado'} correctamente.`);
+    } else {
+      const errorData = await res.json();
+      alert("Error: " + errorData.error);
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center text-xl font-bold text-brand-900">Cargando perfil...</div>;
 
   return (
     <div className="md:max-w-5/6 mx-auto p-6">
-      <div className="flex gap-4 mb-6 border-b border-gray-100 pb-4">
-        <button onClick={() => setOwnUser(!ownUser)} disabled={admin}>
-          {ownUser ? "Ver como otro usuario" : "Ver como dueño del perfil"}
-        </button>
-        <button onClick={() => setAdmin(!admin)} disabled={ownUser}>
-          {admin ? "Desactivar modo admin" : "Activar modo admin"}
-        </button>
-      </div>
+      
+      {user.bloqueado && (
+        <div className="bg-red-100 text-red-700 border border-red-200 p-4 rounded-xl text-center font-bold mb-6 shadow-sm">
+          Este usuario está actualmente bloqueado.
+        </div>
+      )}
 
       {isEditing ? (
         <div className="md:shadow-lg md:rounded-2xl p-8 my-8">
@@ -34,67 +103,36 @@ export default function perfilUsuario({}) {
             Editar Perfil
           </h2>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setUser({ ...user, name: editName, about: editAbout });
-              setIsEditing(false);
-            }}
-            className="flex flex-col gap-6"
-          >
+          <form onSubmit={guardarCambios} className="flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
               <div className="md:col-span-1">
                 <label className={labelClass}>Foto de perfil</label>
                 <div className="flex flex-col items-center gap-4 p-4 rounded-xl ">
                   <div className="w-20 h-20 rounded-full overflow-hidden ">
-                    <img
-                      src={user.image}
-                      alt="Foto de perfil actual"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={user.avatar_url} alt="Foto de perfil actual" className="w-full h-full object-cover" />
                   </div>
-                  <input
-                    type="file"
-                    className="block w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-300 file:text-brand-900 hover:cursor-pointer hover:file:cursor-pointer"
-                  />
+                  <input type="file" disabled className="block w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-500 cursor-not-allowed opacity-50" />
                 </div>
               </div>
 
               <div className="md:col-span-2 flex flex-col gap-6">
                 <div>
                   <label className={labelClass}>Nombre</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className={inputClass}
-                  />
+                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={inputClass} />
                 </div>
 
                 <div>
                   <label className={labelClass}>Sobre mí</label>
-                  <textarea
-                    rows="5"
-                    value={editAbout}
-                    onChange={(e) => setEditAbout(e.target.value)}
-                    className={inputClass}
-                  ></textarea>
+                  <textarea rows="5" value={editAbout} onChange={(e) => setEditAbout(e.target.value)} className={inputClass} />
                 </div>
               </div>
             </div>
 
             <div className="flex gap-4 pt-6 border-t border-gray-100 justify-end mt-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition"
-              >
+              <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition">
                 Cancelar
               </button>
-              <button
-                type="submit"
-                className="px-8 py-2 rounded-lg bg-brand-900 text-white  font-medium shadow-md cursor-pointer"
-              >
+              <button type="submit" className="px-8 py-2 rounded-lg bg-brand-900 text-white font-medium shadow-md cursor-pointer">
                 Guardar cambios
               </button>
             </div>
@@ -102,14 +140,10 @@ export default function perfilUsuario({}) {
         </div>
       ) : (
         <div>
-          <img
-            className="w-auto h-2/5 mx-auto mt-10 rounded-2xl"
-            src={user.image}
-            alt={user.name}
-          />
+         <img className="w-auto h-64 md:w-auto md:h-80 object-cover mx-auto mt-10 rounded-2xl shadow-md" src={user.avatar_url} alt={user.nombre} /> 
 
           <h1 className="font-primary font-bold text-5xl text-brand-900 p-10 px-15 text-center">
-            {user.name}
+            {user.nombre}
           </h1>
 
           <div className="mx-auto md:w-5/6 px-15">
@@ -117,25 +151,27 @@ export default function perfilUsuario({}) {
               Sobre mí
             </h2>
 
-            <p className="text-brand-900">{user.about}</p>
+            <p className="text-brand-900">{user.sobre_mi}</p>
 
             <div className="flex flex-col md:flex-row gap-6 my-10 justify-center mx-auto">
-              <a href="/listaRecetas" className="w-full md:w-1/2">
+              <a href={`/listaRecetas?userId=${user.id}`} className="w-full md:w-1/2">
                 <button className="btn w-full py-3">Lista de recetas</button>
               </a>
 
               {ownUser && (
-                <button
-                  className="btn w-full md:w-1/2 py-3"
-                  onClick={() => setIsEditing(true)}
-                >
+                <button className="btn w-full md:w-1/2 py-3" onClick={() => setIsEditing(true)}>
                   Editar perfil
                 </button>
               )}
 
-              {admin && (
-                <button className="rounded-full font-semibold text-white shadow-md transition duration-300 bg-red-700 w-full md:w-1/2 py-3">
-                  Banear usuario
+              {admin && !ownUser && (
+                <button 
+                  onClick={banearUsuario}
+                  className={`rounded-full font-semibold text-white shadow-md transition duration-300 w-full md:w-1/2 py-3 ${
+                    user.bloqueado ? "bg-gray-600 hover:bg-gray-700" : "bg-red-700 hover:bg-red-800"
+                  }`}
+                >
+                  {user.bloqueado ? "Desbloquear usuario" : "Banear usuario"}
                 </button>
               )}
             </div>
@@ -143,5 +179,13 @@ export default function perfilUsuario({}) {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Cargando la página...</div>}>
+      <PerfilContent />
+    </Suspense>
   );
 }

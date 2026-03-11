@@ -17,22 +17,22 @@ export default function RecetaCard({ recipe }) {
     "
     >
       <img
-        src={recipe.image}
-        alt={recipe.name}
+        src={recipe.imagen_url || "/images/placeholder.png"} 
+        alt={recipe.titulo}
         className="w-full  h-30 md:h-50 object-cover rounded-t-lg"
       />
 
       <div className="px-4 py-2 gap-4 flex flex-col">
-        <h2 className="font-primary font-bold text-2xl mt-2">{recipe.name}</h2>
-        <p>{recipe.description}</p>
+        <h2 className="font-primary font-bold text-2xl mt-2">{recipe.titulo}</h2>
+        <p>{recipe.descripcion}</p>
       </div>
 
       <div className="px-4 py-2 flex flex-row flex-wrap gap-2 flex-1 items-end">
         <span className="bg-brand-900 text-white rounded-full px-2 py-0.5 text-xs font-semibold">
-          {recipe.dificulty}
+          {recipe.dificultad}
         </span>
         <span className="bg-brand-900 text-white rounded-full px-2 py-0.5 text-xs font-semibold">
-          {recipe.time}
+          {recipe.tiempo}
         </span>
       </div>
     </div>
