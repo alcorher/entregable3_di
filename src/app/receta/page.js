@@ -30,42 +30,43 @@ function RecetaContent() {
   const inputClass = "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
 
   useEffect(() => {
-    async function fetchData() {
-      if (!recetaId) return setLoading(false);
-      try {
-        // 1. Cargar Receta
-        const res = await fetch(`/api/recetas/detalle?id=${recetaId}`);
-        if (res.ok) {
-          const data = await res.json();
-          const ingParsed = data.receta.ingredientes ? JSON.parse(data.receta.ingredientes) : [];
-          const pasParsed = data.receta.pasos ? JSON.parse(data.receta.pasos) : [];
-          
-          setReceta({ ...data.receta, ingredientes: ingParsed, pasos: pasParsed });
-          setAutor(data.receta.perfiles);
-          setOwnRecipe(data.isOwnRecipe);
-          setAdmin(data.currentUserIsAdmin);
+// src/app/receta/page.js
 
-          // Rellenar estados del formulario completo
-          setEditName(data.receta.titulo);
-          setEditDescription(data.receta.descripcion);
-          setEditDificulty(data.receta.dificultad);
-          setEditTime(data.receta.tiempo);
-          setEditIngredientes(ingParsed);
-          setEditPasos(pasParsed);
-        }
+async function fetchData() {
+  if (!recetaId) return setLoading(false);
+  try {
+    const res = await fetch(`/api/recetas/detalle?id=${recetaId}`);
+    if (res.ok) {
+      const data = await res.json();
 
-        // 2. Comprobar si es favorita
-        const resFav = await fetch("/api/favoritos");
-        if (resFav.ok) {
-          const favoritos = await resFav.json();
-          setIsFavorite(favoritos.some(f => f.id === recetaId));
-        }
-      } catch (error) {
-        console.error("Error cargando datos", error);
-      } finally {
-        setLoading(false);
+      // VALIDACIÓN: Verificar que data.receta existe
+      if (data && data.receta) {
+        const ingParsed = data.receta.ingredientes ? JSON.parse(data.receta.ingredientes) : [];
+        const pasParsed = data.receta.pasos ? JSON.parse(data.receta.pasos) : [];
+        
+        setReceta({ ...data.receta, ingredientes: ingParsed, pasos: pasParsed });
+        setAutor(data.receta.perfiles);
+        setOwnRecipe(data.isOwnRecipe);
+        setAdmin(data.currentUserIsAdmin);
+        
+        // Sincronizar estados de edición si existen
+        setEditName(data.receta.titulo);
+        setEditDescription(data.receta.descripcion);
+        setEditDificulty(data.receta.dificultad);
+        setEditTime(data.receta.tiempo);
+        setEditIngredientes(ingParsed);
+        setEditPasos(pasParsed);
+      } else {
+        console.error("La respuesta no contiene una receta válida");
+        setReceta(null);
       }
     }
+  } catch (error) {
+    console.error("Error cargando datos", error);
+  } finally {
+    setLoading(false);
+  }
+}
     fetchData();
   }, [recetaId]);
 

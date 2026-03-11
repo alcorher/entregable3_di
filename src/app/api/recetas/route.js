@@ -1,17 +1,31 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-// NUEVO: Método GET para obtener las recetas públicas para el Home
-export async function GET() {
+
+export async function GET(request) {
   try {
     const supabase = await createClient();
 
-    // Obtenemos las últimas 20 recetas junto con los datos del autor
-    const { data, error } = await supabase
+    // 1. Obtenemos los parámetros de búsqueda de la URL
+    const { searchParams } = new URL(request.url);
+    const busqueda = searchParams.get("busqueda");
+
+    // 2. Preparamos la consulta base
+    let query = supabase
       .from("recetas")
       .select(`*, perfiles (nombre, avatar_url)`)
-      .order("fecha_creacion", { ascending: false })
-      .limit(20);
+      .order("fecha_creacion", { ascending: false });
+
+    // 3. Si el usuario ha buscado algo, filtramos usando "ilike"
+    // NOTA: Asegúrate de que la columna se llama "titulo" en tu base de datos
+    if (busqueda) {
+      query = query.ilike("titulo", `%${busqueda}%`);
+    } else {
+      // Si no hay búsqueda, traemos solo las últimas 20 por defecto
+      query = query.limit(20);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
