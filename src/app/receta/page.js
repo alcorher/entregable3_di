@@ -1,320 +1,157 @@
 "use client";
-import { listUsers } from "../data";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
-const dueñoReceta = listUsers[0];
+function RecetaContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const recetaId = searchParams.get("id");
 
-const recipe = [
-  {
-    id: 1,
-    name: "Patatas fritas",
-    description: "Crispy fried potatoes",
-    dificulty: "Fácil",
-    time: "30 minutos",
-    image: "/images/food/papasAlAjillo.png", 
-    ingredientes: ["4 papas grandes", "1L aceite de girasol", "Sal al gusto"],
-    pasos: [
-      "Pela las patatas y córtalas en rodajas finas o en tiras, según tu preferencia.",
-      "Calienta el aceite de girasol en una sartén profunda o freidora a 180°C.",
-      "Fríe las patatas en tandas para evitar que se peguen, hasta que estén doradas y crujientes.",
-      "Retira las patatas con una espumadera y colócalas sobre papel absorbente para eliminar el exceso de aceite.",
-      "Añade sal al gusto mientras aún están calientes y mezcla bien.",
-      "Sirve las patatas fritas como acompañamiento o con tu salsa favorita.",
-    ],
-  },
-];
-
-export default function Receta() {
-  const [ownRecipe, setOwnRecipe] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [ownRecipe, setOwnRecipe] = useState(false);
   const [admin, setAdmin] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
   
-  const [editName, setEditName] = useState(recipe[0].name);
-  const [editDescription, setEditDescription] = useState(recipe[0].description);
-  const [editDificulty, setEditDificulty] = useState(recipe[0].dificulty);
-  const [editTime, setEditTime] = useState(recipe[0].time);
-  const [editIngredientes, setEditIngredientes] = useState(recipe[0].ingredientes);
-  const [editPasos, setEditPasos] = useState(recipe[0].pasos);
-  
-  const receta = recipe[0];
-  const autorReceta = dueñoReceta;
+  const [receta, setReceta] = useState(null);
+  const [autor, setAutor] = useState(null);
 
-  function editarReceta() {
-    receta.name = editName;
-    receta.description = editDescription;
-    receta.dificulty = editDificulty;
-    receta.time = editTime;
-    receta.ingredientes = editIngredientes;
-    receta.pasos = editPasos;
-  }
+  // Estados del formulario de edición
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editDificulty, setEditDificulty] = useState("Fácil");
+  const [editTime, setEditTime] = useState("");
+  const [editIngredientes, setEditIngredientes] = useState([]);
+  const [editPasos, setEditPasos] = useState([]);
 
-  const labelClass = "block text-xl font-bold text-brand-900 mb-2 font-primary";
-  const inputClass = "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
+  useEffect(() => {
+    async function fetchDetalle() {
+      if (!recetaId) return setLoading(false);
+      try {
+        const res = await fetch(`/api/recetas/detalle?id=${recetaId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const ingParsed = data.receta.ingredientes ? JSON.parse(data.receta.ingredientes) : [];
+          const pasParsed = data.receta.pasos ? JSON.parse(data.receta.pasos) : [];
+          
+          setReceta({ ...data.receta, ingredientes: ingParsed, pasos: pasParsed });
+          setAutor(data.receta.perfiles);
+          setOwnRecipe(data.isOwnRecipe);
+          setAdmin(data.currentUserIsAdmin);
+
+          setEditName(data.receta.titulo);
+          setEditDescription(data.receta.descripcion);
+          setEditDificulty(data.receta.dificultad);
+          setEditTime(data.receta.tiempo);
+          setEditIngredientes(ingParsed);
+          setEditPasos(pasParsed);
+        }
+      } catch (error) {
+        console.error("Error cargando receta", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDetalle();
+  }, [recetaId]);
+
+  // Lógica de favoritos
+  useEffect(() => {
+    async function checkFavorite() {
+      if (!recetaId) return;
+      const res = await fetch("/api/favoritos");
+      if (res.ok) {
+        const favoritos = await res.json();
+        setIsFavorite(favoritos.some(f => f.id === recetaId));
+      }
+    }
+    checkFavorite();
+  }, [recetaId]);
+
+  const toggleFavorito = async () => {
+    const method = isFavorite ? "DELETE" : "POST";
+    const url = isFavorite ? `/api/favoritos?id=${recetaId}` : "/api/favoritos";
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: isFavorite ? null : JSON.stringify({ recetaId })
+    });
+    if (res.ok) setIsFavorite(!isFavorite);
+  };
+
+  const guardarCambios = async (e) => {
+    e.preventDefault();
+    const res = await fetch("/api/recetas/detalle", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: recetaId,
+        titulo: editName,
+        descripcion: editDescription,
+        tiempo: editTime,
+        dificultad: editDificulty,
+        ingredientes: editIngredientes,
+        pasos: editPasos
+      }),
+    });
+
+    if (res.ok) {
+      setReceta({ ...receta, titulo: editName, descripcion: editDescription, tiempo: editTime, dificultad: editDificulty, ingredientes: editIngredientes, pasos: editPasos });
+      setIsEditing(false);
+      alert("Receta actualizada");
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center font-bold text-xl text-brand-900">Cargando receta...</div>;
+  if (!receta) return <div className="p-10 text-center text-red-600">Receta no encontrada.</div>;
 
   return (
     <>
-      <div>
-        <button onClick={() => setOwnRecipe(!ownRecipe)} disabled={admin} >
-          {ownRecipe ? "Ver como otro usuario" : "Ver como dueño de la receta"}
-        </button>
-        <button onClick={() => setAdmin(!admin)} disabled={ownRecipe} >
-          {admin ? "Desactivar modo admin" : "Activar modo admin"}
-        </button>
-      </div>
-
       {isEditing ? (
         <div className="max-w-4xl mx-auto p-8 my-8">
-          <h2 className="text-3xl font-primary font-bold text-brand-900 mb-8 pb-4">
-            Editar Receta
-          </h2>
-          
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              editarReceta();
-              setIsEditing(false);
-            }}
-            className="flex flex-col gap-6"
-          >
-            <div>
-              <label className={labelClass}>Imagen de la receta</label>
-              <input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-300 file:text-brand-900 hover:cursor-pointer hover:file:cursor-pointer"/>
-            </div>
-
+          <h2 className="text-3xl font-primary font-bold text-brand-900 mb-8 pb-4">Editar Receta</h2>
+          <form onSubmit={guardarCambios} className="flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className={labelClass}>Nombre del plato</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Tiempo de preparación</label>
-                <input
-                  type="text" 
-                  value={editTime}
-                  onChange={(e) => setEditTime(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
+              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full p-3 border rounded" placeholder="Nombre" />
+              <input type="text" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="w-full p-3 border rounded" placeholder="Tiempo" />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2">
-                <label className={labelClass}>Descripción</label>
-                <textarea
-                  rows="3"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  className={inputClass}
-                ></textarea>
-              </div>
-              <div>
-                <label className={labelClass}>Dificultad</label>
-                <select
-                  value={editDificulty}
-                  onChange={(e) => setEditDificulty(e.target.value)}
-                  className={`${inputClass} appearance-none`}
-                >
-                  <option value="Fácil">Fácil</option>
-                  <option value="Media">Media</option>
-                  <option value="Difícil">Difícil</option>
-                </select>
-              </div>
-            </div>
-
-
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <label className="text-lg font-bold text-brand-900 font-primary">Ingredientes</label>
-                <button
-                  type="button"
-                  onClick={() => setEditIngredientes([...editIngredientes, ""])}
-                   className="text-sm bg-brand-300 text-brand-900 px-3 cursor-pointer py-1 rounded-full font-semibold transition"
-                >
-                  Añadir ingrediente
-                </button>
-              </div>
-              <div className="space-y-3">
-                {editIngredientes.map((ingrediente, index) => (
-                  <div key={index} className="flex gap-2 items-center">
-                    <span className="text-gray-400 font-mono text-sm w-6 text-right">{index + 1}.</span>
-                    <input
-                      type="text"
-                      value={ingrediente}
-                      onChange={(e) => {
-                        const nuevosIngredientes = [...editIngredientes];
-                        nuevosIngredientes[index] = e.target.value;
-                        setEditIngredientes(nuevosIngredientes);
-                      }}
-                      className={inputClass}
-                    />
-                     <button 
-                        type="button"
-                        className="text-red-400 hover:text-red-600 px-2"
-                        onClick={() => {
-                            const nuevos = editIngredientes.filter((_, i) => i !== index);
-                            setEditIngredientes(nuevos);
-                        }}
-                     >✕</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-brand-300 p-6 rounded-xl">
-              <div className="flex justify-between items-center mb-4">
-                <label className="text-lg font-bold text-brand-900 font-primary">Pasos de preparación</label>
-                <button
-                  type="button"
-                  onClick={() => setEditPasos([...editPasos, ""])}
-                  className="btn px-3 text-sm"
-                >
-                Añadir paso
-                </button>
-              </div>
-              <div className="space-y-4">
-                {editPasos.map((paso, index) => (
-                  <div key={index} className="flex gap-4 items-start">
-                     <span className="text-3xl font-bold text-brand-900 font-secondary mt-1">
-                        {index + 1}º
-                     </span>
-                    <textarea
-                      rows="2"
-                      value={paso}
-                      onChange={(e) => {
-                        const nuevosPasos = [...editPasos];
-                        nuevosPasos[index] = e.target.value;
-                        setEditPasos(nuevosPasos);
-                      }}
-                      className={inputClass}
-                    />
-                    <button 
-                        type="button"
-                        className="text-red-400 hover:text-red-600 mt-3"
-                        onClick={() => {
-                            const nuevos = editPasos.filter((_, i) => i !== index);
-                            setEditPasos(nuevos);
-                        }}
-                     >✕</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-6  justify-end">
-              <button 
-                type="button" 
-                onClick={() => setIsEditing(false)}
-                className="px-6 py-2 rounded-lg text-gray-600 font-medium transition cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button 
-                type="submit"
-               className="px-8 py-2 rounded-lg bg-brand-900 text-white font-medium shadow-md cursor-pointer"
-              >
-                Guardar cambios
-              </button>
+            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full p-3 border rounded" placeholder="Descripción" rows="3" />
+            <div className="flex gap-4 justify-end">
+              <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-2 text-gray-600">Cancelar</button>
+              <button type="submit" className="px-8 py-2 bg-brand-900 text-white rounded">Guardar</button>
             </div>
           </form>
         </div>
-
-
-
-
-
-
-
       ) : (
-  
         <div className="flex flex-col md:flex-row gap-12 max-w-6xl mx-auto p-6">
           <div className="flex flex-col gap-6 w-full md:w-5/12">
-            <div className="rounded-lg"> 
-              <img 
-                className="w-full h-auto rounded-xl object-cover shadow-sm" 
-                src={receta.image} 
-                alt={receta.name} 
-              />
-            </div>
-
-            <div className="mt-4">
-              <h2 className="text-2xl font-bold font-primary text-brand-900 mb-4 w-fit pb-1">Ingredientes</h2>
-              <ul className="space-y-3">
-                {receta.ingredientes.map((ingrediente, index) => (
-                  <li key={index} className="text-brand-900 flex items-center gap-2 s">
-                    {ingrediente}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex flex-wrap gap-3 mt-8 pt-4  text-sm">
-              <button 
-                onClick={() => setIsEditing(true)} 
-                hidden={!ownRecipe} 
-                className="btn px-4"
-              >
-                Editar receta
-              </button>
-              <button hidden={!ownRecipe} className="px-4 rounded-full font-semibold py-3 bg-red-700 text-white shadow-md transition duration-300 cursor-pointer">
-                Eliminar receta
-              </button>
-              <button hidden={!admin} className="px-4 rounded-full font-semibold py-3 bg-red-700 text-white shadow-md transition duration-300 cursor-pointer">
-                Ocultar receta
-              </button>
+            <img className="w-full rounded-xl object-cover shadow-sm" src={receta.imagen_url || "/images/food/placeHolder.png"} alt={receta.titulo} />
+            <h2 className="text-2xl font-bold font-primary text-brand-900">Ingredientes</h2>
+            <ul className="space-y-3">
+              {receta.ingredientes.map((ing, i) => <li key={i} className="text-brand-900">• {ing}</li>)}
+            </ul>
+            <div className="flex gap-3 mt-4">
+              {ownRecipe && <button onClick={() => setIsEditing(true)} className="px-4 py-2 bg-brand-300 rounded font-bold">Editar</button>}
+              {admin && !ownRecipe && <button className="px-4 py-2 bg-gray-700 text-white rounded font-bold">Ocultar</button>}
             </div>
           </div>
-
-          <div className="flex flex-col w-full md:w-7/12 relative text-brand-900">
-            <div className="flex justify-between items-start mb-2 gap-4">
-              <h1 className="text-5xl font-primary font-bold leading-tight text-brand-900">
-                {receta.name}
-              </h1>
-              <button className="bg-brand-900 text-white text-xs font-semibold py-2 px-5 rounded-full hover:bg-green-800 shadow-md transition-all shrink-0 mt-2">
-                Añadir a favoritos
+          <div className="flex flex-col w-full md:w-7/12 text-brand-900">
+            <div className="flex justify-between items-start mb-6">
+              <h1 className="text-5xl font-primary font-bold leading-tight">{receta.titulo}</h1>
+              <button onClick={toggleFavorito} className={`${isFavorite ? 'bg-red-600' : 'bg-brand-900'} text-white py-2 px-5 rounded-full text-xs font-semibold`}>
+                {isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
               </button>
             </div>
-
-            <div className="flex items-center gap-3 mb-8">
-              <img
-                src={autorReceta.image}
-                alt={autorReceta.name}
-                className="h-10 w-10 object-cover rounded-full  "
-              />
-              <span className="font-bold text-sm">{autorReceta.name}</span>
+            <div className="flex items-center gap-3 mb-8 cursor-pointer" onClick={() => router.push(`/perfilUsuario?userId=${receta.autor_id}`)}>
+              <img src={autor?.avatar_url || "/images/gertru.png"} className="h-10 w-10 rounded-full object-cover" />
+              <span className="font-bold">{autor?.nombre}</span>
             </div>
-
-            <div className="flex gap-16 mb-10 pb-6 border-b border-gray-100">
-              <div className="flex flex-col items-center">
-                <h3 className="font-bold font-secondary text-lg mb-1">Dificultad</h3>
-                <span className="font-medium text-brand-900">
-                    {receta.dificulty}
-                </span>
-              </div>
-              <div className="flex flex-col items-center">
-                <h3 className="font-bold font-secondary text-lg mb-1">Tiempo</h3>
-                <p className="font-medium text-brand-900">
-                    {receta.time}
-                </p>
-              </div>
-            </div>
-
+            <p className="text-lg mb-8">{receta.descripcion}</p>
             <div className="flex flex-col gap-6">
-              {receta.pasos.map((paso, index) => (
-                <div 
-                  key={index} 
-                  className="bg-brand-300 rounded-2xl p-6 flex gap-6 items-start shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <span className="text-5xl font-bold font-secondary text-brand-900 leading-none">
-                    {index + 1}º
-                  </span>
-                  <p className="leading-relaxed text-brand-900 pt-2 text-lg">
-                    {paso}
-                  </p>
+              {receta.pasos.map((paso, i) => (
+                <div key={i} className="bg-brand-300 rounded-2xl p-6 flex gap-6 items-start">
+                  <span className="text-5xl font-bold font-secondary">{i + 1}º</span>
+                  <p className="text-lg pt-2">{paso}</p>
                 </div>
               ))}
             </div>
@@ -322,5 +159,13 @@ export default function Receta() {
         </div>
       )}
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Cargando receta...</div>}>
+      <RecetaContent />
+    </Suspense>
   );
 }
