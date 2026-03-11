@@ -1,54 +1,108 @@
-import { listUsers } from "../data";
+"use client";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
+// Componente Usuario (Tarjeta) con tu diseño exacto y enlace al perfil
 function Usuario({ user }) {
   return (
-    <div
-      className="
-      flex flex-col
-      rounded-lg
-      bg-brand-300
-      text-brand-900
-      shadow-lg
-      shadow-brand-300
-      hover:-translate-y-2
-      hover:shadow-xl
-      transition
-      duration-300
-      ease-in-out
-      h-full
-    "
-    >
-      <img
-        className="w-full  h-30 md:h-50 object-cover rounded-t-lg"
-        src={user.image}
-        alt={user.name}
-        width="100"
-      />
-      <div className="px-4 py-2 gap-4 flex flex-col">
-        <h2 className="font-primary font-bold text-2xl mt-2">{user.name}</h2>
-        <p>{user.about}</p>
+    <a href={`/perfilUsuario?userId=${user.id}`} className="block h-full group cursor-pointer">
+      <div
+        className="
+          flex flex-col
+          rounded-lg
+          bg-brand-300
+          text-brand-900
+          shadow-lg
+          shadow-brand-300
+          hover:-translate-y-2
+          hover:shadow-xl
+          transition
+          duration-300
+          ease-in-out
+          h-full
+        "
+      >
+        <img
+          className="w-full h-30 md:h-50 object-cover rounded-t-lg"
+          src={user.avatar_url || "/images/gertru.png"} // Adaptado a tu BD
+          alt={user.nombre} // Adaptado a tu BD
+          width="100"
+        />
+        <div className="px-4 py-2 gap-4 flex flex-col">
+          <h2 className="font-primary font-bold text-2xl mt-2">{user.nombre}</h2>
+          {/* Mantenemos el corte de texto que querías */}
+          <p className="line-clamp-2">
+            {user.sobre_mi || "Este usuario aún no ha escrito nada sobre sí."}
+          </p>
+        </div>
       </div>
+    </a>
+  );
+}
+
+// Componente que maneja la búsqueda de usuarios a la API
+function BusquedaUsuariosContent() {
+  const searchParams = useSearchParams();
+  const busqueda = searchParams.get("busqueda") || "";
+  
+  const [listaUsuarios, setListaUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchUsuarios() {
+      setLoading(true);
+      try {
+        const endpoint = busqueda 
+          ? `/api/usuarios?busqueda=${encodeURIComponent(busqueda)}` 
+          : "/api/usuarios";
+          
+        const res = await fetch(endpoint);
+        
+        if (res.ok) {
+          const data = await res.json();
+          setListaUsuarios(data || []);
+        }
+      } catch (error) {
+        console.error("Error al buscar usuarios:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUsuarios();
+  }, [busqueda]);
+
+  if (loading) {
+    return <div className="p-10 text-center text-xl font-bold text-brand-900 font-primary">Buscando usuarios...</div>;
+  }
+
+  return (
+    <div className="pb-10">
+      <h1 className="font-primary font-bold text-3xl text-brand-900 p-10 px-15">
+        Busqueda : {busqueda || "Todos"}
+      </h1>
+      
+      {listaUsuarios.length > 0 ? (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-15 items-stretch">
+          {listaUsuarios.map((usuario) => (
+            <li key={usuario.id}>
+              <Usuario user={usuario} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="px-15 py-10 text-xl text-brand-900">
+          No se encontraron usuarios que coincidan con "{busqueda}".
+        </p>
+      )}
     </div>
   );
 }
 
-export default function UserSearch({ busqueda = "Chi" }) {
-  const busquedaStr = String(busqueda);
-
-  const listaUsuarios = listUsers.filter((user) =>
-    user.name.toLowerCase().includes(busquedaStr.toLowerCase()),
-  );
-
+// Wrapper con Suspense necesario en Next.js App Router para usar useSearchParams
+export default function UsuariosSearch() {
   return (
-    <div>
-      <h1 className="font-primary font-bold text-3xl text-brand-900 p-10 px-15">Busqueda : {busqueda}</h1>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-15 items-stretch ">
-        {listaUsuarios.map((user) => (
-          <li key={user.id}>
-            <Usuario user={user} />
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Suspense fallback={<div className="p-10 text-center">Cargando la página...</div>}>
+      <BusquedaUsuariosContent />
+    </Suspense>
   );
 }

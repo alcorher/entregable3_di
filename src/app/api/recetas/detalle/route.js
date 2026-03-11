@@ -1,41 +1,51 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+
 export async function GET(request) {
   try {
     const supabase = await createClient();
+
+    // 1. Obtenemos los parámetros de búsqueda de la URL
     const { searchParams } = new URL(request.url);
-    const recetaId = searchParams.get('id');
+    const busqueda = searchParams.get("busqueda");
 
-    if (!recetaId) return NextResponse.json({ error: "Falta el ID" }, { status: 400 });
-
-    // 1. Buscamos la receta y cruzamos con la tabla perfiles
-    const { data: receta, error } = await supabase
+    // 2. Preparamos la consulta base
+    let query = supabase
       .from("recetas")
-      .select(`*, perfiles (nombre, avatar_url, is_admin)`)
-      .eq("id", recetaId)
-      .maybeSingle();
+      .select(`*, perfiles (nombre, avatar_url)`)
+      .order("fecha_creacion", { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    if (!receta) return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
-
-    // 2. Comprobamos quién está viendo la receta (para los botones de editar/borrar)
-    const { data: { user } } = await supabase.auth.getUser();
-    let isOwnRecipe = false;
-    let currentUserIsAdmin = false;
-
-    if (user) {
-      if (user.id === receta.autor_id) isOwnRecipe = true;
-      const { data: profile } = await supabase.from("perfiles").select("is_admin").eq("id", user.id).single();
-      if (profile?.is_admin) currentUserIsAdmin = true;
+    // 3. Si el usuario ha buscado algo, filtramos usando "ilike"
+    // NOTA: Asegúrate de que la columna se llama "titulo" en tu base de datos
+    if (busqueda) {
+      query = query.ilike("titulo", `%${busqueda}%`);
+    } else {
+      // Si no hay búsqueda, traemos solo las últimas 20 por defecto
+      query = query.limit(20);
     }
 
-    return NextResponse.json({ receta, isOwnRecipe, currentUserIsAdmin }, { status: 200 });
+    const { data, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }
 
+// El método POST se queda exactamente igual que lo tenías
+export async function POST(request) {
+  // ... tu código actual de POST ...
+}
 
 // ... (tu función GET actual se queda igual) ...
 
