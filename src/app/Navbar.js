@@ -9,31 +9,40 @@ export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   const supabase = createClient();
-  const [avatarUrl, setAvatarUrl] = useState("/images/gertru.png");
+  const [avatarUrl, setAvatarUrl] = useState("https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc");
 
-  useEffect(() => {
-    async function fetchUserAvatar() {
+useEffect(() => {
+    async function checkAuthAndFetchAvatar() {
       try {
-        const res = await fetch("/api/perfil");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.avatar_url) {
-            setAvatarUrl(data.avatar_url);
+        // 1. Verificamos si hay una sesión activa
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // 2. Definimos si la página actual es pública (donde no se muestra la Navbar)
+        const isPublicPage = location === "/inicioSesion" || location === "/registro" || location === "/";
+
+        // 3. Si no hay sesión y el usuario intenta entrar a una página privada, redirigimos a registro
+        if (!session && !isPublicPage) {
+          router.push("/registro");
+          return;
+        }
+
+        // 4. Si hay sesión y no estamos en una página pública, cargamos el avatar
+        if (session && !isPublicPage) {
+          const res = await fetch("/api/perfil");
+          if (res.ok) {
+            const data = await res.json();
+            if (data.avatar_url) {
+              setAvatarUrl(data.avatar_url);
+            }
           }
         }
       } catch (error) {
-        console.error("Error al cargar el avatar del navbar", error);
+        console.error("Error en la validación de sesión o avatar:", error);
       }
     }
 
-    if (
-      location !== "/inicioSesion" &&
-      location !== "/registro" &&
-      location !== "/"
-    ) {
-      fetchUserAvatar();
-    }
-  }, [location]);
+    checkAuthAndFetchAvatar();
+  }, [location, router, supabase.auth]);
 
   if (
     location === "/inicioSesion" ||
@@ -74,7 +83,7 @@ export default function NavBar() {
       <div className="flex items-center justify-between w-full">
         {/* 1. IZQUIERDA: Logo (Ocupa su espacio proporcional) */}
         <div className="flex-1">
-          <a href="/home">
+          <a href="/home" className="flex items-center gap-2 w-fit">
             <img
               src="/images/logo.png"
               className="h-10 w-auto ps-2"
