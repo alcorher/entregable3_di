@@ -4,22 +4,15 @@ import { createClient } from "@/utils/supabase/server";
 export async function GET(request) {
   try {
     const supabase = await createClient();
-    
-    // Obtenemos el usuario autenticado
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    // Verificamos si nos pasan un userId por la URL (para ver el perfil de otros)
     const { searchParams } = new URL(request.url);
     const userIdUrl = searchParams.get('userId');
-
-    // El ID a buscar será el de la URL o, si no hay, el del usuario logueado
     const targetUserId = userIdUrl || user?.id;
 
     if (!targetUserId) {
       return NextResponse.json({ error: "No autorizado o ID no proporcionado" }, { status: 401 });
     }
 
-    // Buscamos el perfil en la base de datos
     const { data: perfil, error } = await supabase
       .from("perfiles")
       .select("*")
@@ -30,7 +23,6 @@ export async function GET(request) {
       return NextResponse.json({ error: "Perfil no encontrado" }, { status: 404 });
     }
 
-    // Calculamos si el usuario actual es el dueño del perfil o si es admin
     const isOwnProfile = user?.id === targetUserId;
     
     let currentUserIsAdmin = false;
@@ -52,24 +44,35 @@ export async function GET(request) {
 export async function PUT(request) {
   try {
     const supabase = await createClient();
-    
-    // 1. Verificamos quién es el usuario logueado
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // 2. Extraemos los datos que envía el frontend (¡INCLUYENDO avatar_url!)
     const { nombre, sobre_mi, avatar_url } = await request.json();
 
-    // 3. Actualizamos la tabla 'perfiles' del usuario logueado
+    // --- NUEVO: Validación de backend ---
+    const nombreLimpio = nombre?.trim() || "";
+    const sobreMiLimpio = sobre_mi?.trim() || null;
+
+    if (!nombreLimpio) {
+      return NextResponse.json({ error: "El nombre no puede estar en blanco." }, { status: 400 });
+    }
+    if (nombreLimpio.length > 30) {
+      return NextResponse.json({ error: "El nombre no puede exceder los 30 caracteres." }, { status: 400 });
+    }
+    if (sobreMiLimpio && sobreMiLimpio.length > 300) {
+      return NextResponse.json({ error: "La sección 'Sobre mí' no puede exceder los 300 caracteres." }, { status: 400 });
+    }
+    // -----------------------------------
+
     const { error } = await supabase
       .from("perfiles")
       .update({
-        nombre: nombre,
-        sobre_mi: sobre_mi,
-        avatar_url: avatar_url // <-- ESTA LÍNEA ES LA QUE TE FALTABA
+        nombre: nombreLimpio,
+        sobre_mi: sobreMiLimpio,
+        avatar_url: avatar_url 
       })
       .eq("id", user.id);
 

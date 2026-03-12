@@ -55,7 +55,6 @@ export async function GET(request) {
   }
 }
 
-// NUEVO: Método PUT para actualizar la receta (incluyendo la imagen)
 export async function PUT(request) {
   try {
     const supabase = await createClient();
@@ -67,19 +66,42 @@ export async function PUT(request) {
 
     const { id, titulo, descripcion, tiempo, dificultad, ingredientes, pasos, imagen_url } = await request.json();
 
+    // --- NUEVO: Validación de backend ---
+    const tituloLimpio = titulo?.trim() || "";
+    const descripcionLimpia = descripcion?.trim() || "";
+    const tiempoLimpio = tiempo?.trim() || "";
+
+    if (!tituloLimpio || !descripcionLimpia || !tiempoLimpio) {
+      return NextResponse.json({ error: "Faltan campos obligatorios o están en blanco." }, { status: 400 });
+    }
+    if (tituloLimpio.length > 60) {
+      return NextResponse.json({ error: "El título no puede exceder los 60 caracteres." }, { status: 400 });
+    }
+    if (descripcionLimpia.length > 300) {
+      return NextResponse.json({ error: "La descripción no puede exceder los 300 caracteres." }, { status: 400 });
+    }
+
+    const ingredientesValidos = Array.isArray(ingredientes) ? ingredientes.filter(i => typeof i === 'string' && i.trim() !== "") : [];
+    const pasosValidos = Array.isArray(pasos) ? pasos.filter(p => typeof p === 'string' && p.trim() !== "") : [];
+
+    if (ingredientesValidos.length === 0 || pasosValidos.length === 0) {
+      return NextResponse.json({ error: "Debe haber al menos un ingrediente y un paso válido." }, { status: 400 });
+    }
+    // -----------------------------------
+
     const { error } = await supabase
       .from("recetas")
       .update({
-        titulo: titulo,
-        descripcion: descripcion,
-        tiempo: tiempo,
+        titulo: tituloLimpio,
+        descripcion: descripcionLimpia,
+        tiempo: tiempoLimpio,
         dificultad: dificultad,
-        ingredientes: JSON.stringify(ingredientes),
-        pasos: JSON.stringify(pasos),
+        ingredientes: JSON.stringify(ingredientesValidos),
+        pasos: JSON.stringify(pasosValidos),
         imagen_url: imagen_url
       })
       .eq('id', id)
-      .eq('autor_id', user.id); // Validamos que solo el autor pueda editarla
+      .eq('autor_id', user.id); 
 
     if (error) {
       console.error("Error al actualizar la receta:", error);
@@ -93,7 +115,6 @@ export async function PUT(request) {
   }
 }
 
-// NUEVO: Método DELETE para poder borrar la receta
 export async function DELETE(request) {
   try {
     const supabase = await createClient();
@@ -114,7 +135,7 @@ export async function DELETE(request) {
       .from("recetas")
       .delete()
       .eq('id', recetaId)
-      .eq('autor_id', user.id); // Validamos que solo el autor pueda eliminarla
+      .eq('autor_id', user.id); 
 
     if (error) {
       console.error("Error al eliminar la receta:", error);
@@ -128,7 +149,6 @@ export async function DELETE(request) {
   }
 }
 
-// NUEVO: Método PATCH para ocultar/mostrar receta (Solo admins)
 export async function PATCH(request) {
   try {
     const supabase = await createClient();
@@ -158,7 +178,6 @@ export async function PATCH(request) {
       return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
     }
 
-    // Actualizar la columna 'oculto'
     const { error } = await supabase
       .from("recetas")
       .update({ oculta: oculto })

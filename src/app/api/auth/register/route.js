@@ -6,12 +6,22 @@ export async function POST(request) {
     const { email, password, nombre } = await request.json();
     const supabase = await createClient(); 
 
-    // --- NUEVO: 1. Comprobamos si el nombre ya existe ---
-    // Usamos .ilike() para que "Pepe" y "pepe" cuenten como el mismo nombre
+    // --- NUEVO: Validación de backend ---
+    const nombreLimpio = nombre?.trim() || "";
+    
+    if (!nombreLimpio) {
+      return NextResponse.json({ error: "El nombre no puede estar en blanco." }, { status: 400 });
+    }
+    if (nombreLimpio.length > 30) {
+      return NextResponse.json({ error: "El nombre no puede exceder los 30 caracteres." }, { status: 400 });
+    }
+    // -----------------------------------
+
+    // 1. Comprobamos si el nombre ya existe
     const { data: usuarioExistente } = await supabase
       .from('perfiles')
       .select('nombre')
-      .ilike('nombre', nombre)
+      .ilike('nombre', nombreLimpio) // Usamos la variable limpia
       .maybeSingle();
 
     if (usuarioExistente) {
@@ -20,9 +30,8 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    // ----------------------------------------------------
 
-    // 2. Registramos al usuario en Supabase (auth.users)
+    // 2. Registramos al usuario en Supabase
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -32,12 +41,12 @@ export async function POST(request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // 3. Creamos el perfil público en nuestra tabla "perfiles"
+    // 3. Creamos el perfil público
     if (authData.user) {
       const { error: profileError } = await supabase.from('perfiles').insert([
         {
           id: authData.user.id, 
-          nombre: nombre,
+          nombre: nombreLimpio, // Usamos la variable limpia
           sobre_mi: null,         
           avatar_url: null        
         }
