@@ -22,17 +22,28 @@ export default function SubirReceta() {
   const guardarReceta = async (e) => {
     e.preventDefault();
 
-    // Validación básica
-    if (!nombre || !descripcion || !time) {
+    // 1. Limpiamos los espacios en blanco de los campos principales
+    const nombreLimpio = nombre.trim();
+    const descripcionLimpia = descripcion.trim();
+    const timeLimpio = time.trim();
+
+    // 2. Validación básica: Comprobamos las variables limpias
+    if (!nombreLimpio || !descripcionLimpia || !timeLimpio) {
       alert(
-        "Por favor, completa al menos el nombre, la descripción y el tiempo.",
+        "Por favor, completa el nombre, la descripción y el tiempo con texto válido (no solo espacios).",
       );
       return;
     }
 
-    // Filtramos para quitar ingredientes o pasos vacíos que el usuario haya dejado en blanco
+    // 3. Filtramos para quitar ingredientes o pasos vacíos que el usuario haya dejado en blanco
     const ingredientesValidos = ingredientes.filter((i) => i.trim() !== "");
     const pasosValidos = pasos.filter((p) => p.trim() !== "");
+
+    // 4. (Opcional pero recomendado) Validar que haya al menos 1 ingrediente y 1 paso con texto real
+    if (ingredientesValidos.length === 0 || pasosValidos.length === 0) {
+      alert("Por favor, añade al menos un ingrediente y un paso válido.");
+      return;
+    }
 
     setLoading(true);
 
@@ -42,13 +53,13 @@ export default function SubirReceta() {
       // LÓGICA DE SUBIDA DE IMAGEN A SUPABASE
       if (imagen) {
         const supabase = createClient();
-        const fileExt = imagen.name.split('.').pop();
+        const fileExt = imagen.name.split(".").pop();
         const fileName = `${Date.now()}.${fileExt}`; // Nombre único
         const filePath = `${fileName}`;
 
         // Subimos el archivo al bucket 'recetas'
         const { error: uploadError } = await supabase.storage
-          .from('recetas')
+          .from("recetas")
           .upload(filePath, imagen);
 
         if (uploadError) {
@@ -59,7 +70,7 @@ export default function SubirReceta() {
 
         // Obtenemos la URL pública
         const { data: publicUrlData } = supabase.storage
-          .from('recetas')
+          .from("recetas")
           .getPublicUrl(filePath);
 
         imagen_url = publicUrlData.publicUrl;
@@ -69,13 +80,13 @@ export default function SubirReceta() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titulo: nombre,
-          descripcion: descripcion,
+          titulo: nombreLimpio, // Enviamos los datos limpios sin espacios extra
+          descripcion: descripcionLimpia,
           dificultad: dificulty,
-          tiempo: time,
+          tiempo: timeLimpio,
           ingredientes: ingredientesValidos,
           pasos: pasosValidos,
-          imagen_url: imagen_url, // Se añade la URL obtenida
+          imagen_url: imagen_url,
         }),
       });
 
@@ -101,9 +112,7 @@ export default function SubirReceta() {
 
       <form onSubmit={guardarReceta} className="flex flex-col gap-6">
         <div>
-          <label className={labelClass}>
-            Imagen de la receta
-          </label>
+          <label className={labelClass}>Imagen de la receta</label>
           <input
             type="file"
             accept="image/*"

@@ -66,6 +66,19 @@ function PerfilContent() {
   const guardarCambios = async (e) => {
     e.preventDefault();
 
+    // 1. Limpiamos los espacios en blanco al principio y al final
+    const nombreLimpio = editName.trim();
+    const sobreMiLimpio = editAbout.trim();
+
+    // 2. Validación del nombre: si al quitar espacios se queda vacío, mostramos error y detenemos
+    if (!nombreLimpio) {
+      alert("El nombre no puede estar en blanco ni contener solo espacios.");
+      return; // Muy importante el return para que no siga ejecutando
+    }
+
+    // 3. Validación de "Sobre mí": si está vacío, enviamos null
+    const final_sobre_mi = sobreMiLimpio === "" ? null : sobreMiLimpio;
+
     let final_avatar_url = user.avatar_url; // Mantenemos el actual por si no se modifica
 
     // LÓGICA DE SUBIDA DE AVATAR A SUPABASE
@@ -94,8 +107,8 @@ function PerfilContent() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombre: editName,
-        sobre_mi: editAbout,
+        nombre: nombreLimpio, // Pasamos el nombre limpio
+        sobre_mi: final_sobre_mi, // Pasamos null o el texto limpio
         avatar_url: final_avatar_url,
       }),
     });
@@ -103,10 +116,15 @@ function PerfilContent() {
     if (res.ok) {
       setUser({
         ...user,
-        nombre: editName,
-        sobre_mi: editAbout,
+        nombre: nombreLimpio,
+        // Si final_sobre_mi es null, volvemos a poner tu texto por defecto en la UI
+        sobre_mi: final_sobre_mi || "Este usuario aún no ha escrito nada sobre sí.",
         avatar_url: final_avatar_url,
       });
+      // Actualizamos también los estados de edición para que no queden con espacios si vuelves a editar
+      setEditName(nombreLimpio);
+      setEditAbout(final_sobre_mi || "");
+      
       setIsEditing(false);
       setAvatar(null); // Limpiamos el input file al guardar
     } else {
@@ -115,7 +133,6 @@ function PerfilContent() {
         const errorData = await res.json();
 
         // 2. Mostramos el error del servidor (dependiendo de cómo lo llames en tu API: .error, .message, etc.)
-        // Si el servidor no mandó un mensaje específico, usamos uno por defecto.
         alert(
           errorData.error ||
             errorData.message ||
