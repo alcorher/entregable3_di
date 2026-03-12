@@ -24,7 +24,7 @@ function Usuario({ user }) {
       >
         <img
           className="w-full h-30 md:h-50 object-cover rounded-t-lg"
-          src={user.avatar_url || "/images/gertru.png"} // Adaptado a tu BD
+          src={user.avatar_url || "https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc"} // Adaptado a tu BD
           alt={user.nombre} // Adaptado a tu BD
           width="100"
         />

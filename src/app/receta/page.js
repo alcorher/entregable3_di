@@ -280,7 +280,7 @@ async function fetchData() {
               className="flex items-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition" 
               onClick={() => router.push(`/perfilUsuario?userId=${receta.autor_id}`)}
             >
-              <img src={autor?.avatar_url || "/images/gertru.png"} alt={autor?.nombre} className="h-10 w-10 object-cover rounded-full" />
+              <img src={autor?.avatar_url || "https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc"} alt={autor?.nombre} className="h-10 w-10 object-cover rounded-full" />
               <span className="font-bold text-sm hover:underline">{autor?.nombre}</span>
             </div>
 

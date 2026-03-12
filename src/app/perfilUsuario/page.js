@@ -30,12 +30,12 @@ function PerfilContent() {
             id: data.id,
             nombre: data.nombre,
             sobre_mi: data.sobre_mi || "Este usuario aún no ha escrito nada sobre sí.",
-            avatar_url: data.avatar_url || "/images/gertru.png",
+            avatar_url: data.avatar_url || "https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc",
             bloqueado: data.bloqueado
           });
           setOwnUser(data.isOwnProfile);
           setAdmin(data.currentUserIsAdmin); 
-          setEditName(data.nombre);
+          setEditName(data.nombre); 
           setEditAbout(data.sobre_mi || "");
         } else {
           if (!userIdFromUrl) window.location.href = "/inicioSesion";
