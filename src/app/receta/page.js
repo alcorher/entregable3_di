@@ -9,7 +9,7 @@ function RecetaContent() {
   const recetaId = searchParams.get("id");
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false); // Nuevo estado para el proceso de guardado
+  const [saving, setSaving] = useState(false); 
   const [receta, setReceta] = useState(null);
   const [autor, setAutor] = useState(null);
 
@@ -26,7 +26,7 @@ function RecetaContent() {
   const [editTime, setEditTime] = useState("");
   const [editIngredientes, setEditIngredientes] = useState([]);
   const [editPasos, setEditPasos] = useState([]);
-  const [nuevaImagen, setNuevaImagen] = useState(null); // Nuevo estado para la imagen
+  const [nuevaImagen, setNuevaImagen] = useState(null); 
 
   // Clases CSS para el formulario de edición
   const labelClass = "block text-xl font-bold text-brand-900 mb-2 font-primary";
@@ -122,7 +122,7 @@ function RecetaContent() {
           dificultad: editDificulty,
           ingredientes: editIngredientes.filter(i => i.trim() !== ""),
           pasos: editPasos.filter(p => p.trim() !== ""),
-          imagen_url: final_imagen_url // Enviamos la URL final (nueva o antigua)
+          imagen_url: final_imagen_url 
         }),
       });
 
@@ -155,6 +155,28 @@ function RecetaContent() {
     if (!confirm("¿Estás seguro de que quieres eliminar permanentemente esta receta?")) return;
     const res = await fetch(`/api/recetas/detalle?id=${recetaId}&action=delete`, { method: "DELETE" });
     if (res.ok) router.push("/home");
+  };
+
+  // NUEVA FUNCIÓN: Ocultar o mostrar receta (solo admin)
+  const toggleOcultar = async () => {
+    const nuevoEstado = !receta.oculta;
+    const accion = nuevoEstado ? "ocultar" : "mostrar";
+    
+    if (!confirm(`¿Estás seguro de que quieres ${accion} esta receta para el resto de usuarios?`)) return;
+
+    const res = await fetch(`/api/recetas/detalle?id=${recetaId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ oculta: nuevoEstado })
+    });
+
+    if (res.ok) {
+      setReceta({ ...receta, oculta: nuevoEstado });
+      alert(`Receta ${nuevoEstado ? 'ocultada' : 'visible'} correctamente.`);
+    } else {
+      const errorData = await res.json();
+      alert("Error: " + errorData.error);
+    }
   };
 
   if (loading) return <div className="p-10 text-center font-bold text-xl text-brand-900 font-primary">Cargando receta...</div>;
@@ -284,7 +306,7 @@ function RecetaContent() {
           </form>
         </div>
       ) : (
-        // --- VISTA DETALLE (TU DISEÑO ORIGINAL) ---
+        // --- VISTA DETALLE ---
         <div className="flex flex-col md:flex-row gap-12 max-w-6xl mx-auto p-6">
           
           <div className="flex flex-col gap-6 w-full md:w-5/12">
@@ -309,14 +331,20 @@ function RecetaContent() {
               {ownRecipe && (
                 <>
                   <button onClick={() => setIsEditing(true)} className="btn px-4 cursor-pointer">Editar receta</button>
-                  <button onClick={eliminarReceta} className="px-4 rounded-full font-semibold py-3 bg-red-700 text-white shadow-md transition duration-300 cursor-pointer hover:bg-red-800">
+                  <button onClick={eliminarReceta} className="px-4 rounded-full font-semibold py-2 text-xs bg-red-700 text-white shadow-md transition duration-300 cursor-pointer hover:bg-red-800">
                     Eliminar receta
                   </button>
                 </>
               )}
+              {/* Modificado: Botón dinámico Ocultar/Mostrar para admins */}
               {admin && !ownRecipe && (
-                <button className="px-4 rounded-full font-semibold py-3 bg-red-700 text-white shadow-md transition duration-300 cursor-pointer hover:bg-red-800">
-                  Ocultar receta
+                <button 
+                  onClick={toggleOcultar}
+                  className={`px-4 rounded-full font-semibold py-2 text-white shadow-md transition duration-300 cursor-pointer text-xs ${
+                    receta.oculta ? "bg-green-700 hover:bg-green-800" : "bg-red-700 hover:bg-red-800"
+                  }`}
+                >
+                  {receta.oculta ? "Mostrar receta" : "Ocultar receta"}
                 </button>
               )}
             </div>

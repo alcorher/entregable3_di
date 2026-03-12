@@ -23,7 +23,7 @@ html {
 }
 
 .btn {
-  @apply rounded-full font-semibold py-1 px-3  text-sm bg-brand-900 text-white shadow-md transition duration-300 cursor-pointer;
+  @apply rounded-full font-semibold py-2 px-3  text-sm bg-brand-900 text-white shadow-md transition duration-300 cursor-pointer;
 }
 
 

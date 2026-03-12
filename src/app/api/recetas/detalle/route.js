@@ -127,3 +127,51 @@ export async function DELETE(request) {
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
+
+// NUEVO: Método PATCH para ocultar/mostrar receta (Solo admins)
+export async function PATCH(request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    // Comprobar si el usuario es administrador
+    const { data: perfil } = await supabase
+      .from("perfiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+
+    if (!perfil?.is_admin) {
+      return NextResponse.json({ error: "No tienes permisos de administrador" }, { status: 403 });
+    }
+
+    // Obtener el ID de la receta y el nuevo estado (true/false)
+    const { searchParams } = new URL(request.url);
+    const recetaId = searchParams.get('id');
+    const { oculto } = await request.json();
+
+    if (!recetaId) {
+      return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
+    }
+
+    // Actualizar la columna 'oculto'
+    const { error } = await supabase
+      .from("recetas")
+      .update({ oculta: oculto })
+      .eq('id', recetaId);
+
+    if (error) {
+      console.error("Error al cambiar visibilidad:", error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ message: "Visibilidad de la receta actualizada" }, { status: 200 });
+  } catch (error) {
+    console.error("Error crítico en API PATCH:", error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
+}

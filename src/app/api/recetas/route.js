@@ -13,6 +13,7 @@ export async function GET(request) {
     let query = supabase
       .from("recetas")
       .select(`*, perfiles (nombre, avatar_url)`)
+      .eq("oculta", false)
       .order("fecha_creacion", { ascending: false });
 
     // 3. Si el usuario ha buscado algo, filtramos usando "ilike"
