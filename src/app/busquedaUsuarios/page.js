@@ -5,7 +5,10 @@ import { useSearchParams } from "next/navigation";
 // Componente Usuario (Tarjeta) con tu diseño exacto y enlace al perfil
 function Usuario({ user }) {
   return (
-    <a href={`/perfilUsuario?userId=${user.id}`} className="block h-full group cursor-pointer">
+    <a
+      href={`/perfilUsuario?userId=${user.id}`}
+      className="block h-full group cursor-pointer"
+    >
       <div
         className="
           flex flex-col
@@ -24,12 +27,17 @@ function Usuario({ user }) {
       >
         <img
           className="w-full h-30 md:h-50 object-cover rounded-t-lg"
-          src={user.avatar_url || "https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc"} // Adaptado a tu BD
+          src={
+            user.avatar_url ||
+            "https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc"
+          } // Adaptado a tu BD
           alt={user.nombre} // Adaptado a tu BD
           width="100"
         />
         <div className="px-4 py-2 gap-4 flex flex-col">
-          <h2 className="font-primary font-bold text-2xl mt-2">{user.nombre}</h2>
+          <h2 className="font-primary font-bold text-2xl mt-2">
+            {user.nombre}
+          </h2>
           {/* Mantenemos el corte de texto que querías */}
           <p className="line-clamp-2">
             {user.sobre_mi || "Este usuario aún no ha escrito nada sobre sí."}
@@ -44,7 +52,7 @@ function Usuario({ user }) {
 function BusquedaUsuariosContent() {
   const searchParams = useSearchParams();
   const busqueda = searchParams.get("busqueda") || "";
-  
+
   const [listaUsuarios, setListaUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,12 +60,12 @@ function BusquedaUsuariosContent() {
     async function fetchUsuarios() {
       setLoading(true);
       try {
-        const endpoint = busqueda 
-          ? `/api/usuarios?busqueda=${encodeURIComponent(busqueda)}` 
+        const endpoint = busqueda
+          ? `/api/usuarios?busqueda=${encodeURIComponent(busqueda)}`
           : "/api/usuarios";
-          
+
         const res = await fetch(endpoint);
-        
+
         if (res.ok) {
           const data = await res.json();
           setListaUsuarios(data || []);
@@ -72,15 +80,19 @@ function BusquedaUsuariosContent() {
   }, [busqueda]);
 
   if (loading) {
-    return <div className="p-10 text-center text-xl font-bold text-brand-900 font-primary">Buscando usuarios...</div>;
+    return (
+      <div className="p-10 text-center text-xl font-bold text-brand-900 font-primary">
+        Buscando usuarios...
+      </div>
+    );
   }
 
   return (
     <div className="pb-10">
       <h1 className="font-primary font-bold text-3xl text-brand-900 p-10 px-15">
-        Busqueda : {busqueda || "Todos"}
+        Búsqueda: {busqueda || "Todos"}
       </h1>
-      
+
       {listaUsuarios.length > 0 ? (
         <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 px-15 items-stretch">
           {listaUsuarios.map((usuario) => (
@@ -90,9 +102,11 @@ function BusquedaUsuariosContent() {
           ))}
         </ul>
       ) : (
-        <p className="px-15 py-10 text-xl text-brand-900">
-          No se encontraron usuarios que coincidan con "{busqueda}".
-        </p>
+        <div className="px-15 py-10">
+          <p className="text-xl text-brand-900 font-medium text-center bg-gray-100 p-8 rounded-xl shadow-inner">
+            No se han encontrado usuarios que coincidan con "{busqueda}".
+          </p>
+        </div>
       )}
     </div>
   );
@@ -101,7 +115,9 @@ function BusquedaUsuariosContent() {
 // Wrapper con Suspense necesario en Next.js App Router para usar useSearchParams
 export default function UsuariosSearch() {
   return (
-    <Suspense fallback={<div className="p-10 text-center">Cargando la página...</div>}>
+    <Suspense
+      fallback={<div className="p-10 text-center">Cargando la página...</div>}
+    >
       <BusquedaUsuariosContent />
     </Suspense>
   );

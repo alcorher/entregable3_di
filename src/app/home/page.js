@@ -5,14 +5,23 @@ import RecetaCard from "../Receta.js";
 export default function Home() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // NUEVO: Estados para manejar la paginación
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 16; 
 
   useEffect(() => {
     async function fetchRecetas() {
+      setLoading(true);
       try {
-        const res = await fetch("/api/recetas");
+        // Añadimos page y limit como query params
+        const res = await fetch(`/api/recetas?page=${page}&limit=${limit}`);
         if (res.ok) {
-          const data = await res.json();
-          setRecipes(data);
+          const result = await res.json();
+          // Como la API ahora devuelve un objeto con { data, totalPages }, extraemos los datos así:
+          setRecipes(result.data || []);
+          setTotalPages(result.totalPages || 1);
         } else {
           console.error("Error al cargar recetas del servidor");
         }
@@ -23,8 +32,9 @@ export default function Home() {
       }
     }
 
+    // El fetch se vuelve a ejecutar automáticamente cada vez que la variable "page" cambia
     fetchRecetas();
-  }, []);
+  }, [page]);
 
   return (
     <main>
@@ -65,16 +75,28 @@ export default function Home() {
           </ul>
         )}
 
-        <div className="flex justify-center space-x-4 p-10 px-15">
-          <button className="btn px-4 py-2 bg-brand-300 rounded hover:bg-brand-400">
-            {" "}
-            ← Anterior{" "}
-          </button>
-          <button className="btn px-4 py-2 bg-brand-300 rounded hover:bg-brand-400">
-            {" "}
-            Siguiente →{" "}
-          </button>
-        </div>
+        {/* Controles de Paginación */}
+        {recipes.length > 0 && (
+          <div className="flex justify-center items-center space-x-6 p-10 px-15">
+            <button 
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className={`btn px-6 py-2 rounded-full font-bold transition ${page === 1 ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none' : 'bg-brand-300 hover:bg-brand-400 text-brand-900 cursor-pointer'}`}>
+              ← Anterior
+            </button>
+            
+            <span className="text-brand-900 font-semibold text-lg">
+              Página {page} de {totalPages}
+            </span>
+            
+            <button 
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page >= totalPages}
+              className={`btn px-6 py-2 rounded-full font-bold transition ${page >= totalPages ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none' : 'bg-brand-300 hover:bg-brand-400 text-brand-900 cursor-pointer'}`}>
+              Siguiente →
+            </button>
+          </div>
+        )}
       </section>
     </main>
   );

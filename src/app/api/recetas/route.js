@@ -5,32 +5,44 @@ export async function GET(request) {
   try {
     const supabase = await createClient();
 
-    // 1. Obtenemos los parámetros de búsqueda de la URL
     const { searchParams } = new URL(request.url);
     const busqueda = searchParams.get("busqueda");
+    
+    // NUEVO: Leer los parámetros de paginación de la URL
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "16"); // 16 recetas por página
+    
+    // Calculamos desde qué elemento hasta qué elemento debemos buscar
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-    // 2. Preparamos la consulta base
+    // NUEVO: { count: 'exact' } le dice a Supabase que nos diga cuántas hay en total
     let query = supabase
       .from("recetas")
-      .select(`*, perfiles (nombre, avatar_url)`)
-      .eq("oculta", false)
+      .select(`*, perfiles (nombre, avatar_url)`, { count: 'exact' })
+      .eq("oculta", false) // Filtro de ocultas
       .order("fecha_creacion", { ascending: false });
 
-    // 3. Si el usuario ha buscado algo, filtramos usando "ilike"
+    // Si el usuario ha buscado algo
     if (busqueda) {
       query = query.ilike("titulo", `%${busqueda}%`);
-    } else {
-      // Si no hay búsqueda, traemos solo las últimas 20 por defecto
-      query = query.limit(20);
     }
 
-    const { data, error } = await query;
+    // NUEVO: Aplicamos la paginación a la consulta
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    // NUEVO: Devolvemos un objeto con los datos y el número total de páginas
+    return NextResponse.json({
+      data: data,
+      totalPages: Math.ceil((count || 0) / limit),
+      currentPage: page
+    }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: "Error interno del servidor" },
@@ -43,13 +55,11 @@ export async function POST(request) {
   try {
     const supabase = await createClient();
 
-    // 1. Obtenemos al usuario que está logueado actualmente
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
-    // Si no hay usuario, le denegamos el acceso
     if (authError || !user) {
       return NextResponse.json(
         { error: "No autorizado. Inicia sesión para subir recetas." },
@@ -57,22 +67,20 @@ export async function POST(request) {
       );
     }
 
-    // 2. Extraemos los datos que nos envía el formulario (incluye imagen_url)
     const { titulo, descripcion, tiempo, dificultad, ingredientes, pasos, imagen_url } =
       await request.json();
 
-    // 3. Guardamos la receta en la base de datos
     const { error } = await supabase.from("recetas").insert([
       {
-        autor_id: user.id, // Vinculamos la receta al usuario logueado
+        autor_id: user.id,
         titulo: titulo,
         descripcion: descripcion,
         tiempo: tiempo,
         dificultad: dificultad,
-        // Convertimos los arrays a texto (JSON) para guardarlos en la columna 'text'
         ingredientes: JSON.stringify(ingredientes),
         pasos: JSON.stringify(pasos),
-        imagen_url: imagen_url || null, // Se guarda la URL o null si está vacía
+        imagen_url: imagen_url || null, 
+        oculta: false
       },
     ]);
 
