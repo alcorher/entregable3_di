@@ -51,8 +51,6 @@ export async function PUT(request) {
     }
 
     const { nombre, sobre_mi, avatar_url } = await request.json();
-
-    // --- NUEVO: Validación de backend ---
     const nombreLimpio = nombre?.trim() || "";
     const sobreMiLimpio = sobre_mi?.trim() || null;
 
@@ -65,7 +63,6 @@ export async function PUT(request) {
     if (sobreMiLimpio && sobreMiLimpio.length > 300) {
       return NextResponse.json({ error: "La sección 'Sobre mí' no puede exceder los 300 caracteres." }, { status: 400 });
     }
-    // -----------------------------------
 
     const { error } = await supabase
       .from("perfiles")

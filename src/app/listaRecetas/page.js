@@ -2,11 +2,9 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import RecetaCard from "../Receta.js";
-
-// Creamos un subcomponente que hace el trabajo de buscar
 function ListaRecetasContent() {
   const searchParams = useSearchParams();
-  const userId = searchParams.get("userId"); // Leemos el ID de la URL
+  const userId = searchParams.get("userId");
 
   const [recipes, setRecipes] = useState([]);
   const [username, setUsername] = useState("Cargando...");
@@ -14,7 +12,6 @@ function ListaRecetasContent() {
 
   useEffect(() => {
     async function fetchRecetasDelUsuario() {
-      // Si entramos a la página sin ID en la URL, avisamos del error
       if (!userId) {
         setUsername("Usuario no especificado");
         setLoading(false);
@@ -22,7 +19,6 @@ function ListaRecetasContent() {
       }
 
       try {
-        // Llamamos a la API enviándole el userId por parámetro
         const res = await fetch(`/api/recetas/usuario?userId=${userId}`);
         
         if (res.ok) {
@@ -65,8 +61,6 @@ function ListaRecetasContent() {
     </div>
   );
 }
-
-// Exportamos la página envuelta en Suspense (necesario en Next.js al leer la URL)
 export default function ListaRecetasPage() {
   return (
     <Suspense fallback={<div className="p-10 px-15 text-brand-900 text-xl font-bold">Cargando página...</div>}>

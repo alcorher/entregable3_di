@@ -62,8 +62,6 @@ export async function POST(request) {
     }
 
     const { titulo, descripcion, tiempo, dificultad, ingredientes, pasos, imagen_url } = await request.json();
-
-    // --- NUEVO: Validación de backend ---
     const tituloLimpio = titulo?.trim() || "";
     const descripcionLimpia = descripcion?.trim() || "";
     const tiempoLimpio = tiempo?.trim() || "";
@@ -77,15 +75,12 @@ export async function POST(request) {
     if (descripcionLimpia.length > 300) {
       return NextResponse.json({ error: "La descripción no puede exceder los 300 caracteres." }, { status: 400 });
     }
-
-    // Filtrar arrays por si vienen maliciosamente vacíos
     const ingredientesValidos = Array.isArray(ingredientes) ? ingredientes.filter(i => typeof i === 'string' && i.trim() !== "") : [];
     const pasosValidos = Array.isArray(pasos) ? pasos.filter(p => typeof p === 'string' && p.trim() !== "") : [];
 
     if (ingredientesValidos.length === 0 || pasosValidos.length === 0) {
       return NextResponse.json({ error: "Debe haber al menos un ingrediente y un paso válido." }, { status: 400 });
     }
-    // -----------------------------------
 
     const { error } = await supabase.from("recetas").insert([
       {

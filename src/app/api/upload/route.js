@@ -4,8 +4,6 @@ import { createClient } from "@/utils/supabase/server";
 export async function POST(request) {
   try {
     const supabase = await createClient();
-
-    // 1. Verificamos usuario autenticado
     const {
       data: { user },
       error: authError,
@@ -16,8 +14,6 @@ export async function POST(request) {
         { status: 401 },
       );
     }
-
-    // 2. Leemos el FormData enviado desde el cliente
     const formData = await request.formData();
     const file = formData.get("file");
     const bucket = formData.get("bucket");
@@ -29,8 +25,6 @@ export async function POST(request) {
         { status: 400 },
       );
     }
-
-    // 3. Validaciones de Seguridad del Archivo
     if (!file.type.startsWith("image/")) {
       return NextResponse.json(
         { error: "El archivo debe ser una imagen válida." },
@@ -43,8 +37,6 @@ export async function POST(request) {
         { status: 400 },
       );
     }
-
-    // 4. Si hay una imagen antigua, la borramos para ahorrar espacio
     if (oldFileName && oldFileName !== "null" && oldFileName !== "") {
       const { error: removeError } = await supabase.storage
         .from(bucket)
@@ -56,12 +48,8 @@ export async function POST(request) {
         );
       }
     }
-
-    // 5. Generar un nombre único y seguro
     const fileExt = file.name.split(".").pop();
     const fileName = `${bucket === "avatars" ? "avatar" : "receta"}-${user.id}-${Date.now()}.${fileExt}`;
-
-    // 6. Subir el archivo al bucket de Supabase (SIN UPSERT)
     const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(fileName, file);
@@ -69,8 +57,6 @@ export async function POST(request) {
     if (uploadError) {
       return NextResponse.json({ error: uploadError.message }, { status: 400 });
     }
-
-    // 7. Obtener y devolver la URL pública
     const { data: publicUrlData } = supabase.storage
       .from(bucket)
       .getPublicUrl(fileName);

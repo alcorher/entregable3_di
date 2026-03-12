@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-
-// Componente Usuario (Tarjeta) con tu diseño exacto y enlace al perfil
 function Usuario({ user }) {
   return (
     <a
@@ -30,15 +28,15 @@ function Usuario({ user }) {
           src={
             user.avatar_url ||
             "https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc"
-          } // Adaptado a tu BD
-          alt={user.nombre} // Adaptado a tu BD
+          }
+          alt={user.nombre}
           width="100"
         />
         <div className="px-4 py-2 gap-4 flex flex-col">
           <h2 className="font-primary font-bold text-2xl mt-2">
             {user.nombre}
           </h2>
-          {/* Mantenemos el corte de texto que querías */}
+          
           <p className="line-clamp-2">
             {user.sobre_mi || "Este usuario aún no ha escrito nada sobre sí."}
           </p>
@@ -47,8 +45,6 @@ function Usuario({ user }) {
     </a>
   );
 }
-
-// Componente que maneja la búsqueda de usuarios a la API
 function BusquedaUsuariosContent() {
   const searchParams = useSearchParams();
   const busqueda = searchParams.get("busqueda") || "";
@@ -111,8 +107,6 @@ function BusquedaUsuariosContent() {
     </div>
   );
 }
-
-// Wrapper con Suspense necesario en Next.js App Router para usar useSearchParams
 export default function UsuariosSearch() {
   return (
     <Suspense

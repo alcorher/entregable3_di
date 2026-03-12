@@ -14,35 +14,22 @@ export default function NavBar() {
   useEffect(() => {
     async function checkAuthAndFetchAvatar() {
       try {
-        // 1. Verificamos si hay una sesión activa
         const { data: { session } } = await supabase.auth.getSession();
-
-        // 2. Definimos si la página actual es pública (donde no se muestra la Navbar)
         const isPublicPage = location === "/inicioSesion" || location === "/registro" || location === "/";
-
-        // 3. Si no hay sesión y el usuario intenta entrar a una página privada, redirigimos a registro
         if (!session && !isPublicPage) {
           router.push("/registro");
           return;
         }
-
-        // 4. Si hay sesión y no estamos en una página pública, cargamos el perfil
         if (session && !isPublicPage) {
           const res = await fetch("/api/perfil");
           if (res.ok) {
             const data = await res.json();
-            
-            // --- NUEVO: COMPROBACIÓN DE BLOQUEO ---
-            // Si la base de datos nos dice que el usuario está bloqueado
             if (data.bloqueado) {
-              await supabase.auth.signOut(); // Cerramos la sesión
+              await supabase.auth.signOut();
               alert("Tu cuenta ha sido bloqueada por un administrador. Se ha cerrado tu sesión por motivos de seguridad.");
-              router.push("/inicioSesion"); // Lo expulsamos al login
-              return; // Detenemos la ejecución
+              router.push("/inicioSesion");
+              return;
             }
-            // --------------------------------------
-
-            // Si no está bloqueado, seguimos cargando su avatar
             if (data.avatar_url) {
               setAvatarUrl(data.avatar_url);
             }
@@ -91,9 +78,9 @@ export default function NavBar() {
 
   return (
     <nav className="bg-brand-900 text-white px-5 py-3">
-      {/* Modificado: Contenedor dividido en 3 columnas flex para un centrado perfecto */}
+      
       <div className="flex items-center justify-between w-full">
-        {/* 1. IZQUIERDA: Logo (Ocupa su espacio proporcional) */}
+        
         <div className="flex-1">
           <a href="/home" className="flex items-center gap-2 w-fit">
             <img
@@ -104,7 +91,7 @@ export default function NavBar() {
           </a>
         </div>
 
-        {/* 2. CENTRO: Buscador (Se mantiene en el centro absoluto) */}
+        
         <div className="hidden md:flex justify-center shrink-0">
           <form
             onSubmit={handleSearch}
@@ -142,7 +129,7 @@ export default function NavBar() {
           </form>
         </div>
 
-        {/* 3. DERECHA: Iconos (Empujados a la derecha proporcionalmente) */}
+        
         <div className="hidden md:flex flex-1 justify-end gap-6 items-center pe-2">
           <a href="/subirReceta">
             <svg
@@ -208,7 +195,7 @@ export default function NavBar() {
           </button>
         </div>
 
-        {/* 3. DERECHA MÓVIL: Botón Hamburguesa */}
+        
         <div className="md:hidden flex-1 flex justify-end">
           <button
             className="flex flex-col gap-1 cursor-pointer"

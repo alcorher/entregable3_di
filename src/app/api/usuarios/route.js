@@ -1,20 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server"; //
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request) {
   try {
-    const supabase = await createClient(); //
-
-    // Obtenemos los parámetros de búsqueda de la URL
+    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const busqueda = searchParams.get("busqueda");
-
-    // Consulta base a la tabla perfiles
     let query = supabase
       .from("perfiles")
       .select("id, nombre, avatar_url, sobre_mi");
-
-    // Aplicamos el filtro si existe búsqueda
     if (busqueda) {
       query = query.ilike("nombre", `%${busqueda}%`);
     } else {

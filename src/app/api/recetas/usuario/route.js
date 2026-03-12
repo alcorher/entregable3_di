@@ -3,7 +3,6 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request) {
   try {
-    // 1. Extraemos el userId de la URL (ej: /api/recetas/usuario?userId=1234)
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 
@@ -18,8 +17,6 @@ export async function GET(request) {
       .select("nombre")
       .eq("id", userId)
       .single();
-
-    // 3. Buscamos todas las recetas de ese usuario concreto
     const { data: recetas, error } = await supabase
       .from("recetas")
       .select(`*, perfiles (nombre, avatar_url)`)

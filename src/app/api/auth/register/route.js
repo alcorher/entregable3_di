@@ -5,8 +5,6 @@ export async function POST(request) {
   try {
     const { email, password, nombre } = await request.json();
     const supabase = await createClient(); 
-
-    // --- NUEVO: Validación de backend ---
     const nombreLimpio = nombre?.trim() || "";
     
     if (!nombreLimpio) {
@@ -15,13 +13,10 @@ export async function POST(request) {
     if (nombreLimpio.length > 30) {
       return NextResponse.json({ error: "El nombre no puede exceder los 30 caracteres." }, { status: 400 });
     }
-    // -----------------------------------
-
-    // 1. Comprobamos si el nombre ya existe
     const { data: usuarioExistente } = await supabase
       .from('perfiles')
       .select('nombre')
-      .ilike('nombre', nombreLimpio) // Usamos la variable limpia
+      .ilike('nombre', nombreLimpio)
       .maybeSingle();
 
     if (usuarioExistente) {
@@ -30,8 +25,6 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-
-    // 2. Registramos al usuario en Supabase
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -40,13 +33,11 @@ export async function POST(request) {
     if (authError) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
-
-    // 3. Creamos el perfil público
     if (authData.user) {
       const { error: profileError } = await supabase.from('perfiles').insert([
         {
           id: authData.user.id, 
-          nombre: nombreLimpio, // Usamos la variable limpia
+          nombre: nombreLimpio,
           sobre_mi: null,         
           avatar_url: null        
         }

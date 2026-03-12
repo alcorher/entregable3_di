@@ -9,8 +9,6 @@ function BusquedaContent() {
   
   const [listaRecetas, setListaRecetas] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Estados para la paginación
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 8; 
@@ -24,7 +22,6 @@ function BusquedaContent() {
     async function fetchRecetas() {
       setLoading(true);
       try {
-        // Hacemos el GET a nuestra propia API incluyendo page y limit
         const endpoint = busqueda 
           ? `/api/recetas?busqueda=${encodeURIComponent(busqueda)}&page=${page}&limit=${limit}` 
           : `/api/recetas?page=${page}&limit=${limit}`;
@@ -33,7 +30,6 @@ function BusquedaContent() {
         
         if (res.ok) {
           const result = await res.json();
-          // CORRECCIÓN: Ahora extraemos la propiedad 'data' y 'totalPages' del resultado
           setListaRecetas(result.data || []);
           setTotalPages(result.totalPages || 1);
         } else {
@@ -47,7 +43,7 @@ function BusquedaContent() {
     }
 
     fetchRecetas();
-  }, [busqueda, page]); // Se vuelve a ejecutar si cambia la búsqueda o la página
+  }, [busqueda, page]);
 
   if (loading && listaRecetas.length === 0) {
     return <div className="p-10 text-center text-xl font-bold text-brand-900">Buscando recetas...</div>;
@@ -69,7 +65,7 @@ function BusquedaContent() {
             ))}
           </ul>
 
-          {/* Controles de Paginación para la búsqueda */}
+          
           {totalPages > 1 && (
             <div className="flex justify-center items-center space-x-6 p-10 px-15 mb-10">
               <button 
@@ -102,8 +98,6 @@ function BusquedaContent() {
     </div>
   );
 }
-
-// Envolvemos el componente principal en Suspense
 export default function RecetaSearch() {
   return (
     <Suspense fallback={<div className="p-10 text-center">Cargando la página...</div>}>

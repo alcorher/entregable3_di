@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-
-// Obtener todos los favoritos del usuario logueado
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -22,16 +20,12 @@ export async function GET() {
       .order('fecha_guardado', { ascending: false });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-    // Retornamos directamente el array de objetos receta
     const recetasFavoritas = data.map(f => f.recetas).filter(r => r !== null);
     return NextResponse.json(recetasFavoritas, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
-
-// Añadir a favoritos
 export async function POST(request) {
   try {
     const supabase = await createClient();
@@ -50,8 +44,6 @@ export async function POST(request) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
-
-// Eliminar de favoritos
 export async function DELETE(request) {
   try {
     const supabase = await createClient();

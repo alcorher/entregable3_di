@@ -5,8 +5,6 @@ import RecetaCard from "../Receta.js";
 export default function Home() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // NUEVO: Estados para manejar la paginación
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 16; 
@@ -15,11 +13,9 @@ export default function Home() {
     async function fetchRecetas() {
       setLoading(true);
       try {
-        // Añadimos page y limit como query params
         const res = await fetch(`/api/recetas?page=${page}&limit=${limit}`);
         if (res.ok) {
           const result = await res.json();
-          // Como la API ahora devuelve un objeto con { data, totalPages }, extraemos los datos así:
           setRecipes(result.data || []);
           setTotalPages(result.totalPages || 1);
         } else {
@@ -31,8 +27,6 @@ export default function Home() {
         setLoading(false);
       }
     }
-
-    // El fetch se vuelve a ejecutar automáticamente cada vez que la variable "page" cambia
     fetchRecetas();
   }, [page]);
 
@@ -75,7 +69,7 @@ export default function Home() {
           </ul>
         )}
 
-        {/* Controles de Paginación */}
+        
         {recipes.length > 0 && (
           <div className="flex justify-center items-center space-x-6 p-10 px-15">
             <button 
