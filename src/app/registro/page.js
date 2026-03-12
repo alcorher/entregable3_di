@@ -9,14 +9,22 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const validarFormulario = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
+
     if (password !== confirmPassword) {
-      alert("Las contraseñas no coinciden.");
+      setErrorMsg("Las contraseñas no coinciden.");
       return;
     } else if (!username || !mail || !password || !confirmPassword) {
-      alert("Por favor, completa todos los campos.");
+      setErrorMsg("Por favor, completa todos los campos.");
+      return;
+    }
+
+    if (username.trim().length > 30) {
+      setErrorMsg("El nombre de usuario no puede exceder los 30 caracteres.");
       return;
     }
 
@@ -33,10 +41,10 @@ export default function Register() {
         router.push("/inicioSesion"); 
       } else {
         const errorData = await res.json();
-        alert("Error al registrar: " + errorData.error);
+        setErrorMsg(errorData.error);
       }
     } catch (error) {
-      alert("Ocurrió un error inesperado al conectar con el servidor.");
+      setErrorMsg("Ocurrió un error inesperado al conectar con el servidor.");
     } finally {
       setLoading(false);
     }
@@ -57,6 +65,12 @@ export default function Register() {
                 Registro
               </h1>
 
+              {errorMsg && (
+                <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+                  {errorMsg}
+                </div>
+              )}
+
               <form onSubmit={validarFormulario} className="space-y-6">
                 <div>
                   <label htmlFor="username" className="block text-sm font-semibold text-brand-900 mb-2">
@@ -70,6 +84,7 @@ export default function Register() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={loading}
+                    maxLength={30}
                   />
                 </div>
 

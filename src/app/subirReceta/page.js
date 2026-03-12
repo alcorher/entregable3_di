@@ -12,36 +12,42 @@ export default function SubirReceta() {
   const [ingredientes, setIngredientes] = useState([""]);
   const [pasos, setPasos] = useState([""]);
   const [loading, setLoading] = useState(false);
-  const [imagen, setImagen] = useState(null); // Estado para la imagen
+  const [imagen, setImagen] = useState(null); 
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // Styles defined as constants
   const labelClass = "block text-xl font-bold text-brand-900 mb-2 font-primary";
   const inputClass =
     "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
 
   const guardarReceta = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
 
-    // 1. Limpiamos los espacios en blanco de los campos principales
     const nombreLimpio = nombre.trim();
     const descripcionLimpia = descripcion.trim();
     const timeLimpio = time.trim();
 
-    // 2. Validación básica: Comprobamos las variables limpias
     if (!nombreLimpio || !descripcionLimpia || !timeLimpio) {
-      alert(
-        "Por favor, completa el nombre, la descripción y el tiempo con texto válido (no solo espacios).",
+      setErrorMsg(
+        "Por favor, completa el nombre, la descripción y el tiempo con texto válido (no solo espacios)."
       );
       return;
     }
 
-    // 3. Filtramos para quitar ingredientes o pasos vacíos que el usuario haya dejado en blanco
+    if (nombreLimpio.length > 40) {
+      setErrorMsg("El nombre del plato no puede exceder los 40 caracteres.");
+      return;
+    }
+    if (descripcionLimpia.length > 300) {
+      setErrorMsg("La descripción no puede exceder los 300 caracteres.");
+      return;
+    }
+
     const ingredientesValidos = ingredientes.filter((i) => i.trim() !== "");
     const pasosValidos = pasos.filter((p) => p.trim() !== "");
 
-    // 4. (Opcional pero recomendado) Validar que haya al menos 1 ingrediente y 1 paso con texto real
     if (ingredientesValidos.length === 0 || pasosValidos.length === 0) {
-      alert("Por favor, añade al menos un ingrediente y un paso válido.");
+      setErrorMsg("Por favor, añade al menos un ingrediente y un paso válido.");
       return;
     }
 
@@ -50,25 +56,22 @@ export default function SubirReceta() {
     try {
       let imagen_url = null;
 
-      // LÓGICA DE SUBIDA DE IMAGEN A SUPABASE
       if (imagen) {
         const supabase = createClient();
         const fileExt = imagen.name.split(".").pop();
-        const fileName = `${Date.now()}.${fileExt}`; // Nombre único
+        const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        // Subimos el archivo al bucket 'recetas'
         const { error: uploadError } = await supabase.storage
           .from("recetas")
           .upload(filePath, imagen);
 
         if (uploadError) {
-          alert("Error al subir la imagen a Supabase: " + uploadError.message);
+          setErrorMsg("Error al subir la imagen a Supabase: " + uploadError.message);
           setLoading(false);
           return;
         }
 
-        // Obtenemos la URL pública
         const { data: publicUrlData } = supabase.storage
           .from("recetas")
           .getPublicUrl(filePath);
@@ -94,10 +97,10 @@ export default function SubirReceta() {
         router.push("/home");
       } else {
         const errorData = await res.json();
-        alert("Error al guardar: " + errorData.error);
+        setErrorMsg("Error al guardar: " + errorData.error);
       }
     } catch (error) {
-      alert("Ocurrió un error al conectar con el servidor.");
+      setErrorMsg("Ocurrió un error al conectar con el servidor.");
     } finally {
       setLoading(false);
     }
@@ -108,6 +111,12 @@ export default function SubirReceta() {
       <h2 className="text-3xl font-primary font-bold text-brand-900 mb-8 pb-4">
         Subir Receta
       </h2>
+
+      {errorMsg && (
+        <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 font-medium text-sm">
+          {errorMsg}
+        </div>
+      )}
 
       <form onSubmit={guardarReceta} className="flex flex-col gap-6">
         <div>
@@ -131,6 +140,7 @@ export default function SubirReceta() {
               className={inputClass}
               placeholder="Ej. Paella Valenciana"
               disabled={loading}
+              maxLength={40}
             />
           </div>
           <div>
@@ -155,6 +165,7 @@ export default function SubirReceta() {
               className={inputClass}
               placeholder="Describe brevemente tu plato..."
               disabled={loading}
+              maxLength={300}
             ></textarea>
           </div>
           <div>

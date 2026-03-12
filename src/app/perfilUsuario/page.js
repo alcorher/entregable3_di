@@ -22,6 +22,7 @@ function PerfilContent() {
   const [editName, setEditName] = useState("");
   const [editAbout, setEditAbout] = useState("");
   const [avatar, setAvatar] = useState(null); 
+  const [errorMsg, setErrorMsg] = useState("");
 
   const labelClass = "block text-sm font-bold text-brand-900 mb-2 font-primary";
   const inputClass =
@@ -65,27 +66,31 @@ function PerfilContent() {
 
   const guardarCambios = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
 
-    // 1. Limpiamos los espacios en blanco al principio y al final
     const nombreLimpio = editName.trim();
     const sobreMiLimpio = editAbout.trim();
 
-    // 2. Validación del nombre: si al quitar espacios se queda vacío, mostramos error y detenemos
     if (!nombreLimpio) {
-      alert("El nombre no puede estar en blanco ni contener solo espacios.");
+      setErrorMsg("El nombre no puede estar en blanco ni contener solo espacios.");
       return; 
     }
 
-    // 3. Validación de "Sobre mí": si está vacío, enviamos null
+    if (nombreLimpio.length > 30) {
+      setErrorMsg("El nombre no puede exceder los 30 caracteres.");
+      return;
+    }
+    if (sobreMiLimpio.length > 300) {
+      setErrorMsg("La sección 'Sobre mí' no puede exceder los 300 caracteres.");
+      return;
+    }
+
     const final_sobre_mi = sobreMiLimpio === "" ? null : sobreMiLimpio;
+    let final_avatar_url = user.avatar_url; 
 
-    let final_avatar_url = user.avatar_url; // Mantenemos el actual por si no se modifica
-
-    // LÓGICA DE SUBIDA DE AVATAR A SUPABASE
     if (avatar) {
       const supabase = createClient();
 
-      // NUEVO: Eliminar la foto antigua si el usuario ya tenía una
       if (user.avatar_url && !user.avatar_url.includes("imgs.search.brave.com")) {
         const oldFileName = user.avatar_url.split("/").pop();
         
@@ -106,7 +111,7 @@ function PerfilContent() {
         .upload(fileName, avatar, { upsert: true });
 
       if (uploadError) {
-        alert("Error al subir el avatar: " + uploadError.message);
+        setErrorMsg("Error al subir el avatar: " + uploadError.message);
         return;
       }
 
@@ -142,13 +147,13 @@ function PerfilContent() {
     } else {
       try {
         const errorData = await res.json();
-        alert(
+        setErrorMsg(
           errorData.error ||
             errorData.message ||
-            "Error al guardar los cambios.",
+            "Error al guardar los cambios."
         );
       } catch (e) {
-        alert("Ocurrió un error inesperado en el servidor.");
+        setErrorMsg("Ocurrió un error inesperado en el servidor.");
       }
     }
   };
@@ -172,10 +177,9 @@ function PerfilContent() {
 
     if (res.ok) {
       setUser({ ...user, bloqueado: !user.bloqueado });
-      // Se ha eliminado el alert() de éxito
     } else {
       const errorData = await res.json();
-      alert("Error: " + errorData.error);
+      setErrorMsg("Error: " + errorData.error); 
     }
   };
 
@@ -199,6 +203,12 @@ function PerfilContent() {
           <h2 className="text-3xl font-primary font-bold text-brand-900 mb-8 pb-4">
             Editar Perfil
           </h2>
+
+          {errorMsg && (
+            <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 font-medium text-sm">
+              {errorMsg}
+            </div>
+          )}
 
           <form onSubmit={guardarCambios} className="flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
@@ -232,6 +242,7 @@ function PerfilContent() {
                     onChange={(e) => setEditName(e.target.value)}
                     required
                     className={inputClass}
+                    maxLength={30}
                   />
                 </div>
 
@@ -242,6 +253,7 @@ function PerfilContent() {
                     value={editAbout}
                     onChange={(e) => setEditAbout(e.target.value)}
                     className={inputClass}
+                    maxLength={300}
                   />
                 </div>
               </div>
@@ -251,6 +263,7 @@ function PerfilContent() {
               <button
                 type="button"
                 onClick={() => {
+                  setErrorMsg("");
                   setIsEditing(false);
                   setAvatar(null);
                 }}
@@ -269,6 +282,11 @@ function PerfilContent() {
         </div>
       ) : (
         <div>
+          {errorMsg && (
+            <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 font-medium text-sm text-center w-full md:w-1/2 mx-auto mt-4">
+              {errorMsg}
+            </div>
+          )}
           <img
             className="w-auto h-64 md:w-auto md:h-80 object-cover mx-auto mt-10 rounded-2xl shadow-md"
             src={user.avatar_url}

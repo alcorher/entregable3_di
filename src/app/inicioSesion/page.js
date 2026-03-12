@@ -7,11 +7,14 @@ export default function Login() {
   const [mail, setMail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const validarFormulario = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
+
     if (!mail || !password) {
-      alert("Por favor, completa todos los campos.");
+      setErrorMsg("Por favor, completa todos los campos.");
       return;
     }
 
@@ -25,13 +28,13 @@ export default function Login() {
       });
 
       if (res.ok) {
-        router.push("/home"); // Redirige a la página principal tras loguearse
+        router.push("/home");
       } else {
         const errorData = await res.json();
-        alert("Error: " + errorData.error);
+        setErrorMsg(errorData.error);
       }
     } catch (error) {
-      alert("Ocurrió un error inesperado al conectar con el servidor.");
+      setErrorMsg("Ocurrió un error inesperado al conectar con el servidor.");
     } finally {
       setLoading(false);
     }
@@ -59,6 +62,12 @@ export default function Login() {
               <h1 className="text-3xl text-center text-brand-900 mb-8 font-primary font-normal">
                 Inicio de sesión
               </h1>
+
+              {errorMsg && (
+                <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+                  {errorMsg}
+                </div>
+              )}
 
               <form onSubmit={validarFormulario} className="space-y-6">
                 <div>

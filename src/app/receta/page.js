@@ -12,14 +12,13 @@ function RecetaContent() {
   const [saving, setSaving] = useState(false);
   const [receta, setReceta] = useState(null);
   const [autor, setAutor] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // Estados de permisos y favoritos
   const [ownRecipe, setOwnRecipe] = useState(false);
   const [admin, setAdmin] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Estados del formulario de edición
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDificulty, setEditDificulty] = useState("Fácil");
@@ -28,7 +27,6 @@ function RecetaContent() {
   const [editPasos, setEditPasos] = useState([]);
   const [nuevaImagen, setNuevaImagen] = useState(null);
 
-  // Clases CSS para el formulario de edición
   const labelClass = "block text-xl font-bold text-brand-900 mb-2 font-primary";
   const inputClass =
     "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
@@ -58,7 +56,6 @@ function RecetaContent() {
             setOwnRecipe(data.isOwnRecipe);
             setAdmin(data.currentUserIsAdmin);
 
-            // Sincronizar estados de edición
             setEditName(data.receta.titulo);
             setEditDescription(data.receta.descripcion);
             setEditDificulty(data.receta.dificultad);
@@ -92,27 +89,31 @@ function RecetaContent() {
 
   const guardarCambios = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
 
-    // 1. Limpiamos los espacios en blanco de los campos principales
     const nombreLimpio = editName.trim();
     const descripcionLimpia = editDescription.trim();
     const timeLimpio = editTime.trim();
 
-    // 2. Comprobamos que no se hayan quedado vacíos tras limpiar los espacios
     if (!nombreLimpio || !descripcionLimpia || !timeLimpio) {
-      alert(
-        "Por favor, completa el nombre, la descripción y el tiempo con texto válido (no solo espacios).",
-      );
+      setErrorMsg("Por favor, completa el nombre, la descripción y el tiempo con texto válido.");
       return;
     }
 
-    // 3. Filtramos los ingredientes y pasos que estén vacíos o sean solo espacios
+    if (nombreLimpio.length > 40) {
+      setErrorMsg("El nombre del plato no puede exceder los 40 caracteres.");
+      return;
+    }
+    if (descripcionLimpia.length > 300) {
+      setErrorMsg("La descripción no puede exceder los 300 caracteres.");
+      return;
+    }
+
     const ingredientesValidos = editIngredientes.filter((i) => i.trim() !== "");
     const pasosValidos = editPasos.filter((p) => p.trim() !== "");
 
-    // 4. Validamos que haya al menos 1 ingrediente y 1 paso con contenido real
     if (ingredientesValidos.length === 0 || pasosValidos.length === 0) {
-      alert("Por favor, añade al menos un ingrediente y un paso válido.");
+      setErrorMsg("Por favor, añade al menos un ingrediente y un paso válido.");
       return;
     }
 
@@ -121,14 +122,11 @@ function RecetaContent() {
     try {
       let final_imagen_url = receta.imagen_url;
 
-      // LÓGICA DE SUBIDA DE LA NUEVA IMAGEN A SUPABASE
       if (nuevaImagen) {
         const supabase = createClient();
 
-        // NUEVO: Eliminar la imagen antigua de la receta si existía
         if (receta.imagen_url) {
           const oldFileName = receta.imagen_url.split("/").pop();
-          
           const { error: removeError } = await supabase.storage
             .from("recetas")
             .remove([oldFileName]);
@@ -146,7 +144,7 @@ function RecetaContent() {
           .upload(fileName, nuevaImagen);
 
         if (uploadError) {
-          alert("Error al subir la nueva imagen: " + uploadError.message);
+          setErrorMsg("Error al subir la nueva imagen: " + uploadError.message);
           setSaving(false);
           return;
         }
@@ -193,13 +191,12 @@ function RecetaContent() {
 
         setIsEditing(false);
         setNuevaImagen(null);
-        // Se ha eliminado el alert("Receta actualizada con éxito.");
       } else {
         const errorData = await res.json();
-        alert("Hubo un error al guardar los cambios: " + errorData.error);
+        setErrorMsg("Hubo un error al guardar los cambios: " + errorData.error);
       }
     } catch (error) {
-      alert("Ocurrió un error al conectar con el servidor.");
+      setErrorMsg("Ocurrió un error al conectar con el servidor.");
     } finally {
       setSaving(false);
     }
@@ -238,10 +235,9 @@ function RecetaContent() {
 
     if (res.ok) {
       setReceta({ ...receta, oculta: nuevoEstado });
-      // Se ha eliminado el alert() de éxito
     } else {
       const errorData = await res.json();
-      alert("Error: " + errorData.error);
+      setErrorMsg("Error: " + errorData.error); 
     }
   };
 
@@ -265,6 +261,12 @@ function RecetaContent() {
           <h2 className="text-3xl font-primary font-bold text-brand-900 mb-8 pb-4">
             Editar Receta
           </h2>
+
+          {errorMsg && (
+            <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 font-medium text-sm">
+              {errorMsg}
+            </div>
+          )}
 
           <form onSubmit={guardarCambios} className="flex flex-col gap-6">
             <div className="md:col-span-2">
@@ -314,6 +316,7 @@ function RecetaContent() {
                   onChange={(e) => setEditName(e.target.value)}
                   disabled={saving}
                   className={inputClass}
+                  maxLength={40}
                 />
               </div>
               <div>
@@ -337,6 +340,7 @@ function RecetaContent() {
                   onChange={(e) => setEditDescription(e.target.value)}
                   disabled={saving}
                   className={inputClass}
+                  maxLength={300}
                 ></textarea>
               </div>
               <div>
@@ -454,6 +458,7 @@ function RecetaContent() {
               <button
                 type="button"
                 onClick={() => {
+                  setErrorMsg("");
                   setIsEditing(false);
                   setNuevaImagen(null);
                 }}
@@ -475,6 +480,11 @@ function RecetaContent() {
       ) : (
         <div className="flex flex-col md:flex-row gap-12 max-w-6xl mx-auto p-6">
           <div className="flex flex-col gap-6 w-full md:w-5/12">
+            {errorMsg && (
+                <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-2 font-medium text-sm text-center">
+                  {errorMsg}
+                </div>
+            )}
             <div className="rounded-lg">
               <img
                 className="w-full h-auto rounded-xl object-cover shadow-sm"
