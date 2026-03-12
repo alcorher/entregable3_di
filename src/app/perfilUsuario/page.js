@@ -73,7 +73,7 @@ function PerfilContent() {
     // 2. Validación del nombre: si al quitar espacios se queda vacío, mostramos error y detenemos
     if (!nombreLimpio) {
       alert("El nombre no puede estar en blanco ni contener solo espacios.");
-      return; // Muy importante el return para que no siga ejecutando
+      return; 
     }
 
     // 3. Validación de "Sobre mí": si está vacío, enviamos null
@@ -84,6 +84,20 @@ function PerfilContent() {
     // LÓGICA DE SUBIDA DE AVATAR A SUPABASE
     if (avatar) {
       const supabase = createClient();
+
+      // NUEVO: Eliminar la foto antigua si el usuario ya tenía una
+      if (user.avatar_url && !user.avatar_url.includes("imgs.search.brave.com")) {
+        const oldFileName = user.avatar_url.split("/").pop();
+        
+        const { error: removeError } = await supabase.storage
+          .from("avatars")
+          .remove([oldFileName]);
+          
+        if (removeError) {
+          console.error("No se pudo eliminar el avatar antiguo:", removeError.message);
+        }
+      }
+
       const fileExt = avatar.name.split(".").pop();
       const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
 
@@ -107,8 +121,8 @@ function PerfilContent() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombre: nombreLimpio, // Pasamos el nombre limpio
-        sobre_mi: final_sobre_mi, // Pasamos null o el texto limpio
+        nombre: nombreLimpio, 
+        sobre_mi: final_sobre_mi, 
         avatar_url: final_avatar_url,
       }),
     });
@@ -117,29 +131,23 @@ function PerfilContent() {
       setUser({
         ...user,
         nombre: nombreLimpio,
-        // Si final_sobre_mi es null, volvemos a poner tu texto por defecto en la UI
         sobre_mi: final_sobre_mi || "Este usuario aún no ha escrito nada sobre sí.",
         avatar_url: final_avatar_url,
       });
-      // Actualizamos también los estados de edición para que no queden con espacios si vuelves a editar
       setEditName(nombreLimpio);
       setEditAbout(final_sobre_mi || "");
       
       setIsEditing(false);
-      setAvatar(null); // Limpiamos el input file al guardar
+      setAvatar(null); 
     } else {
-      // 1. Intentamos leer la respuesta del backend
       try {
         const errorData = await res.json();
-
-        // 2. Mostramos el error del servidor (dependiendo de cómo lo llames en tu API: .error, .message, etc.)
         alert(
           errorData.error ||
             errorData.message ||
             "Error al guardar los cambios.",
         );
       } catch (e) {
-        // Si la respuesta no es un JSON (por ejemplo, un error 500 del servidor de Vercel/Node)
         alert("Ocurrió un error inesperado en el servidor.");
       }
     }
@@ -164,6 +172,7 @@ function PerfilContent() {
 
     if (res.ok) {
       setUser({ ...user, bloqueado: !user.bloqueado });
+      // Se ha eliminado el alert() de éxito
     } else {
       const errorData = await res.json();
       alert("Error: " + errorData.error);
@@ -278,7 +287,6 @@ function PerfilContent() {
             <p className="text-brand-900">{user.sobre_mi}</p>
 
             <div className="flex flex-col md:flex-row gap-6 my-10 justify-center mx-auto">
-              {/* 1. Lista de recetas: Ahora el <a> es el botón directamente */}
               <a
                 href={`/listaRecetas?userId=${user.id}`}
                 className="btn w-full md:w-1/2 py-3 flex items-center justify-center text-center"
@@ -286,7 +294,6 @@ function PerfilContent() {
                 Lista de recetas
               </a>
 
-              {/* 2. Editar Perfil */}
               {ownUser && (
                 <button
                   className="btn w-full md:w-1/2 py-3 flex items-center justify-center"
@@ -296,7 +303,6 @@ function PerfilContent() {
                 </button>
               )}
 
-              {/* 3. Banear / Desbloquear Usuario */}
               {admin && !ownUser && (
                 <button
                   onClick={banearUsuario}

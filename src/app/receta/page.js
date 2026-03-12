@@ -124,6 +124,20 @@ function RecetaContent() {
       // LÓGICA DE SUBIDA DE LA NUEVA IMAGEN A SUPABASE
       if (nuevaImagen) {
         const supabase = createClient();
+
+        // NUEVO: Eliminar la imagen antigua de la receta si existía
+        if (receta.imagen_url) {
+          const oldFileName = receta.imagen_url.split("/").pop();
+          
+          const { error: removeError } = await supabase.storage
+            .from("recetas")
+            .remove([oldFileName]);
+            
+          if (removeError) {
+            console.error("No se pudo eliminar la imagen antigua:", removeError.message);
+          }
+        }
+
         const fileExt = nuevaImagen.name.split(".").pop();
         const fileName = `receta-edit-${Date.now()}.${fileExt}`;
 
@@ -149,11 +163,11 @@ function RecetaContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: recetaId,
-          titulo: nombreLimpio, // Usamos las variables limpias
+          titulo: nombreLimpio, 
           descripcion: descripcionLimpia,
           tiempo: timeLimpio,
           dificultad: editDificulty,
-          ingredientes: ingredientesValidos, // Usamos los arrays filtrados
+          ingredientes: ingredientesValidos, 
           pasos: pasosValidos,
           imagen_url: final_imagen_url,
         }),
@@ -171,7 +185,6 @@ function RecetaContent() {
           imagen_url: final_imagen_url,
         });
 
-        // Sincronizamos los estados de edición con los valores limpios
         setEditName(nombreLimpio);
         setEditDescription(descripcionLimpia);
         setEditTime(timeLimpio);
@@ -180,6 +193,7 @@ function RecetaContent() {
 
         setIsEditing(false);
         setNuevaImagen(null);
+        // Se ha eliminado el alert("Receta actualizada con éxito.");
       } else {
         const errorData = await res.json();
         alert("Hubo un error al guardar los cambios: " + errorData.error);
@@ -205,7 +219,6 @@ function RecetaContent() {
     if (res.ok) router.push("/home");
   };
 
-  // NUEVA FUNCIÓN: Ocultar o mostrar receta (solo admin)
   const toggleOcultar = async () => {
     const nuevoEstado = !receta.oculta;
     const accion = nuevoEstado ? "ocultar" : "mostrar";
@@ -225,6 +238,7 @@ function RecetaContent() {
 
     if (res.ok) {
       setReceta({ ...receta, oculta: nuevoEstado });
+      // Se ha eliminado el alert() de éxito
     } else {
       const errorData = await res.json();
       alert("Error: " + errorData.error);
@@ -247,7 +261,6 @@ function RecetaContent() {
   return (
     <>
       {isEditing ? (
-        // --- VISTA EDICIÓN (FORMULARIO COMPLETO) ---
         <div className="max-w-4xl mx-auto p-8 my-8">
           <h2 className="text-3xl font-primary font-bold text-brand-900 mb-8 pb-4">
             Editar Receta
@@ -460,7 +473,6 @@ function RecetaContent() {
           </form>
         </div>
       ) : (
-        // --- VISTA DETALLE ---
         <div className="flex flex-col md:flex-row gap-12 max-w-6xl mx-auto p-6">
           <div className="flex flex-col gap-6 w-full md:w-5/12">
             <div className="rounded-lg">
@@ -504,7 +516,6 @@ function RecetaContent() {
                   </button>
                 </>
               )}
-              {/* Modificado: Botón dinámico Ocultar/Mostrar para admins */}
               {admin && !ownRecipe && (
                 <button
                   onClick={toggleOcultar}
