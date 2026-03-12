@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 
 export default function SubirReceta() {
   const router = useRouter();
@@ -34,8 +33,8 @@ export default function SubirReceta() {
       return;
     }
 
-    if (nombreLimpio.length > 40) {
-      setErrorMsg("El nombre del plato no puede exceder los 40 caracteres.");
+    if (nombreLimpio.length > 60) {
+      setErrorMsg("El nombre del plato no puede exceder los 60 caracteres.");
       return;
     }
     if (descripcionLimpia.length > 300) {
@@ -57,26 +56,24 @@ export default function SubirReceta() {
       let imagen_url = null;
 
       if (imagen) {
-        const supabase = createClient();
-        const fileExt = imagen.name.split(".").pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const formData = new FormData();
+        formData.append("file", imagen);
+        formData.append("bucket", "recetas");
 
-        const { error: uploadError } = await supabase.storage
-          .from("recetas")
-          .upload(filePath, imagen);
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData, 
+        });
 
-        if (uploadError) {
-          setErrorMsg("Error al subir la imagen a Supabase: " + uploadError.message);
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json();
+          setErrorMsg("Error al subir la imagen: " + errorData.error);
           setLoading(false);
           return;
         }
 
-        const { data: publicUrlData } = supabase.storage
-          .from("recetas")
-          .getPublicUrl(filePath);
-
-        imagen_url = publicUrlData.publicUrl;
+        const uploadData = await uploadRes.json();
+        imagen_url = uploadData.url;
       }
 
       const res = await fetch("/api/recetas", {
@@ -140,7 +137,7 @@ export default function SubirReceta() {
               className={inputClass}
               placeholder="Ej. Paella Valenciana"
               disabled={loading}
-              maxLength={40}
+              maxLength={60}
             />
           </div>
           <div>

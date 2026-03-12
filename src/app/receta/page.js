@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 
 function RecetaContent() {
   const searchParams = useSearchParams();
@@ -100,8 +99,8 @@ function RecetaContent() {
       return;
     }
 
-    if (nombreLimpio.length > 40) {
-      setErrorMsg("El nombre del plato no puede exceder los 40 caracteres.");
+    if (nombreLimpio.length > 60) {
+      setErrorMsg("El nombre del plato no puede exceder los 60 caracteres.");
       return;
     }
     if (descripcionLimpia.length > 300) {
@@ -123,37 +122,29 @@ function RecetaContent() {
       let final_imagen_url = receta.imagen_url;
 
       if (nuevaImagen) {
-        const supabase = createClient();
+        const formData = new FormData();
+        formData.append("file", nuevaImagen);
+        formData.append("bucket", "recetas");
 
         if (receta.imagen_url) {
           const oldFileName = receta.imagen_url.split("/").pop();
-          const { error: removeError } = await supabase.storage
-            .from("recetas")
-            .remove([oldFileName]);
-            
-          if (removeError) {
-            console.error("No se pudo eliminar la imagen antigua:", removeError.message);
-          }
+          formData.append("oldFileName", oldFileName);
         }
 
-        const fileExt = nuevaImagen.name.split(".").pop();
-        const fileName = `receta-edit-${Date.now()}.${fileExt}`;
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-        const { error: uploadError } = await supabase.storage
-          .from("recetas")
-          .upload(fileName, nuevaImagen);
-
-        if (uploadError) {
-          setErrorMsg("Error al subir la nueva imagen: " + uploadError.message);
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json();
+          setErrorMsg("Error al subir la nueva imagen: " + errorData.error);
           setSaving(false);
           return;
         }
 
-        const { data: publicUrlData } = supabase.storage
-          .from("recetas")
-          .getPublicUrl(fileName);
-
-        final_imagen_url = publicUrlData.publicUrl;
+        const uploadData = await uploadRes.json();
+        final_imagen_url = uploadData.url;
       }
 
       const res = await fetch("/api/recetas/detalle", {
@@ -316,7 +307,7 @@ function RecetaContent() {
                   onChange={(e) => setEditName(e.target.value)}
                   disabled={saving}
                   className={inputClass}
-                  maxLength={40}
+                  maxLength={60}
                 />
               </div>
               <div>

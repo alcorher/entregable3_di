@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 
 function PerfilContent() {
   const searchParams = useSearchParams();
@@ -89,37 +88,28 @@ function PerfilContent() {
     let final_avatar_url = user.avatar_url; 
 
     if (avatar) {
-      const supabase = createClient();
+      const formData = new FormData();
+      formData.append("file", avatar);
+      formData.append("bucket", "avatars");
 
       if (user.avatar_url && !user.avatar_url.includes("imgs.search.brave.com")) {
         const oldFileName = user.avatar_url.split("/").pop();
-        
-        const { error: removeError } = await supabase.storage
-          .from("avatars")
-          .remove([oldFileName]);
-          
-        if (removeError) {
-          console.error("No se pudo eliminar el avatar antiguo:", removeError.message);
-        }
+        formData.append("oldFileName", oldFileName);
       }
 
-      const fileExt = avatar.name.split(".").pop();
-      const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, avatar, { upsert: true });
-
-      if (uploadError) {
-        setErrorMsg("Error al subir el avatar: " + uploadError.message);
+      if (!uploadRes.ok) {
+        const errorData = await uploadRes.json();
+        setErrorMsg("Error al subir el avatar: " + errorData.error);
         return;
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
-
-      final_avatar_url = publicUrlData.publicUrl;
+      const uploadData = await uploadRes.json();
+      final_avatar_url = uploadData.url;
     }
 
     const res = await fetch("/api/perfil", {
