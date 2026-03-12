@@ -11,7 +11,7 @@ export default function NavBar() {
   const supabase = createClient();
   const [avatarUrl, setAvatarUrl] = useState("https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc");
 
-useEffect(() => {
+  useEffect(() => {
     async function checkAuthAndFetchAvatar() {
       try {
         // 1. Verificamos si hay una sesión activa
@@ -26,11 +26,23 @@ useEffect(() => {
           return;
         }
 
-        // 4. Si hay sesión y no estamos en una página pública, cargamos el avatar
+        // 4. Si hay sesión y no estamos en una página pública, cargamos el perfil
         if (session && !isPublicPage) {
           const res = await fetch("/api/perfil");
           if (res.ok) {
             const data = await res.json();
+            
+            // --- NUEVO: COMPROBACIÓN DE BLOQUEO ---
+            // Si la base de datos nos dice que el usuario está bloqueado
+            if (data.bloqueado) {
+              await supabase.auth.signOut(); // Cerramos la sesión
+              alert("Tu cuenta ha sido bloqueada por un administrador. Se ha cerrado tu sesión por motivos de seguridad.");
+              router.push("/inicioSesion"); // Lo expulsamos al login
+              return; // Detenemos la ejecución
+            }
+            // --------------------------------------
+
+            // Si no está bloqueado, seguimos cargando su avatar
             if (data.avatar_url) {
               setAvatarUrl(data.avatar_url);
             }
@@ -164,7 +176,7 @@ useEffect(() => {
             />
           </a>
 
-          {/* Icono de salir: Tamaño arreglado a 25x25 y clase h-8 */}
+          
           <button
             onClick={handleSignOut}
             className="hover:text-red-400 transition cursor-pointer flex items-center text white"

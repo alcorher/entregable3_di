@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-
 export async function GET(request) {
   try {
     const supabase = await createClient();
@@ -17,7 +16,6 @@ export async function GET(request) {
       .order("fecha_creacion", { ascending: false });
 
     // 3. Si el usuario ha buscado algo, filtramos usando "ilike"
-    // NOTA: Asegúrate de que la columna se llama "titulo" en tu base de datos
     if (busqueda) {
       query = query.ilike("titulo", `%${busqueda}%`);
     } else {
@@ -58,8 +56,8 @@ export async function POST(request) {
       );
     }
 
-    // 2. Extraemos los datos que nos envía el formulario
-    const { titulo, descripcion, tiempo, dificultad, ingredientes, pasos } =
+    // 2. Extraemos los datos que nos envía el formulario (incluye imagen_url)
+    const { titulo, descripcion, tiempo, dificultad, ingredientes, pasos, imagen_url } =
       await request.json();
 
     // 3. Guardamos la receta en la base de datos
@@ -73,7 +71,7 @@ export async function POST(request) {
         // Convertimos los arrays a texto (JSON) para guardarlos en la columna 'text'
         ingredientes: JSON.stringify(ingredientes),
         pasos: JSON.stringify(pasos),
-        imagen_url: null, // Por ahora dejamos la imagen vacía
+        imagen_url: imagen_url || null, // Se guarda la URL o null si está vacía
       },
     ]);
 

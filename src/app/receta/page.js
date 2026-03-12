@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 function RecetaContent() {
   const searchParams = useSearchParams();
@@ -8,6 +9,7 @@ function RecetaContent() {
   const recetaId = searchParams.get("id");
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false); // Nuevo estado para el proceso de guardado
   const [receta, setReceta] = useState(null);
   const [autor, setAutor] = useState(null);
 
@@ -24,49 +26,47 @@ function RecetaContent() {
   const [editTime, setEditTime] = useState("");
   const [editIngredientes, setEditIngredientes] = useState([]);
   const [editPasos, setEditPasos] = useState([]);
+  const [nuevaImagen, setNuevaImagen] = useState(null); // Nuevo estado para la imagen
 
-  // Clases CSS para el formulario de edición (iguales a las de subir receta)
+  // Clases CSS para el formulario de edición
   const labelClass = "block text-xl font-bold text-brand-900 mb-2 font-primary";
   const inputClass = "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
 
   useEffect(() => {
-// src/app/receta/page.js
+    async function fetchData() {
+      if (!recetaId) return setLoading(false);
+      try {
+        const res = await fetch(`/api/recetas/detalle?id=${recetaId}`);
+        if (res.ok) {
+          const data = await res.json();
 
-async function fetchData() {
-  if (!recetaId) return setLoading(false);
-  try {
-    const res = await fetch(`/api/recetas/detalle?id=${recetaId}`);
-    if (res.ok) {
-      const data = await res.json();
-
-      // VALIDACIÓN: Verificar que data.receta existe
-      if (data && data.receta) {
-        const ingParsed = data.receta.ingredientes ? JSON.parse(data.receta.ingredientes) : [];
-        const pasParsed = data.receta.pasos ? JSON.parse(data.receta.pasos) : [];
-        
-        setReceta({ ...data.receta, ingredientes: ingParsed, pasos: pasParsed });
-        setAutor(data.receta.perfiles);
-        setOwnRecipe(data.isOwnRecipe);
-        setAdmin(data.currentUserIsAdmin);
-        
-        // Sincronizar estados de edición si existen
-        setEditName(data.receta.titulo);
-        setEditDescription(data.receta.descripcion);
-        setEditDificulty(data.receta.dificultad);
-        setEditTime(data.receta.tiempo);
-        setEditIngredientes(ingParsed);
-        setEditPasos(pasParsed);
-      } else {
-        console.error("La respuesta no contiene una receta válida");
-        setReceta(null);
+          if (data && data.receta) {
+            const ingParsed = data.receta.ingredientes ? JSON.parse(data.receta.ingredientes) : [];
+            const pasParsed = data.receta.pasos ? JSON.parse(data.receta.pasos) : [];
+            
+            setReceta({ ...data.receta, ingredientes: ingParsed, pasos: pasParsed });
+            setAutor(data.receta.perfiles);
+            setOwnRecipe(data.isOwnRecipe);
+            setAdmin(data.currentUserIsAdmin);
+            
+            // Sincronizar estados de edición
+            setEditName(data.receta.titulo);
+            setEditDescription(data.receta.descripcion);
+            setEditDificulty(data.receta.dificultad);
+            setEditTime(data.receta.tiempo);
+            setEditIngredientes(ingParsed);
+            setEditPasos(pasParsed);
+          } else {
+            console.error("La respuesta no contiene una receta válida");
+            setReceta(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error cargando datos", error);
+      } finally {
+        setLoading(false);
       }
     }
-  } catch (error) {
-    console.error("Error cargando datos", error);
-  } finally {
-    setLoading(false);
-  }
-}
     fetchData();
   }, [recetaId]);
 
@@ -83,33 +83,71 @@ async function fetchData() {
 
   const guardarCambios = async (e) => {
     e.preventDefault();
-    const res = await fetch("/api/recetas/detalle", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: recetaId, 
-        titulo: editName, 
-        descripcion: editDescription,
-        tiempo: editTime, 
-        dificultad: editDificulty,
-        ingredientes: editIngredientes.filter(i => i.trim() !== ""),
-        pasos: editPasos.filter(p => p.trim() !== "")
-      }),
-    });
-    if (res.ok) {
-      setReceta({ 
-        ...receta, 
-        titulo: editName, 
-        descripcion: editDescription, 
-        tiempo: editTime, 
-        dificultad: editDificulty, 
-        ingredientes: editIngredientes.filter(i => i.trim() !== ""), 
-        pasos: editPasos.filter(p => p.trim() !== "") 
+    setSaving(true);
+
+    try {
+      let final_imagen_url = receta.imagen_url;
+
+      // LÓGICA DE SUBIDA DE LA NUEVA IMAGEN A SUPABASE
+      if (nuevaImagen) {
+        const supabase = createClient();
+        const fileExt = nuevaImagen.name.split('.').pop();
+        const fileName = `receta-edit-${Date.now()}.${fileExt}`; 
+
+        const { error: uploadError } = await supabase.storage
+          .from('recetas')
+          .upload(fileName, nuevaImagen);
+
+        if (uploadError) {
+          alert("Error al subir la nueva imagen: " + uploadError.message);
+          setSaving(false);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('recetas')
+          .getPublicUrl(fileName);
+
+        final_imagen_url = publicUrlData.publicUrl;
+      }
+
+      const res = await fetch("/api/recetas/detalle", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: recetaId, 
+          titulo: editName, 
+          descripcion: editDescription,
+          tiempo: editTime, 
+          dificultad: editDificulty,
+          ingredientes: editIngredientes.filter(i => i.trim() !== ""),
+          pasos: editPasos.filter(p => p.trim() !== ""),
+          imagen_url: final_imagen_url // Enviamos la URL final (nueva o antigua)
+        }),
       });
-      setIsEditing(false);
-      alert("Receta actualizada.");
-    } else {
-      alert("Hubo un error al guardar los cambios.");
+
+      if (res.ok) {
+        setReceta({ 
+          ...receta, 
+          titulo: editName, 
+          descripcion: editDescription, 
+          tiempo: editTime, 
+          dificultad: editDificulty, 
+          ingredientes: editIngredientes.filter(i => i.trim() !== ""), 
+          pasos: editPasos.filter(p => p.trim() !== ""),
+          imagen_url: final_imagen_url 
+        });
+        setIsEditing(false);
+        setNuevaImagen(null);
+        alert("Receta actualizada con éxito.");
+      } else {
+        const errorData = await res.json();
+        alert("Hubo un error al guardar los cambios: " + errorData.error);
+      }
+    } catch (error) {
+      alert("Ocurrió un error al conectar con el servidor.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -132,30 +170,52 @@ async function fetchData() {
           </h2>
 
           <form onSubmit={guardarCambios} className="flex flex-col gap-6">
-            <div>
-                <label className={labelClass}>Imagen de la receta</label>
-                <input type="file" disabled className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-200 file:text-gray-500 cursor-not-allowed opacity-50" />
+            <div className="md:col-span-2">
+              <label className={labelClass}>Imagen de la receta</label>
+              <div className="flex flex-col md:flex-row items-center gap-6 p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <div className="w-40 h-32 rounded-lg overflow-hidden bg-gray-200 shrink-0">
+                  {nuevaImagen ? (
+                    <img src={URL.createObjectURL(nuevaImagen)} className="w-full h-full object-cover" alt="Nueva" />
+                  ) : receta.imagen_url ? (
+                    <img src={receta.imagen_url} className="w-full h-full object-cover" alt="Actual" />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-gray-400 text-sm">Sin imagen</div>
+                  )}
+                </div>
+                <div className="w-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setNuevaImagen(e.target.files[0])}
+                    disabled={saving}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-100 file:text-brand-900 cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selecciona una nueva imagen solo si deseas cambiar la actual.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className={labelClass}>Nombre del plato</label>
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={inputClass} />
+                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} disabled={saving} className={inputClass} />
                 </div>
                 <div>
                     <label className={labelClass}>Tiempo de preparación</label>
-                    <input type="text" value={editTime} onChange={(e) => setEditTime(e.target.value)} className={inputClass} />
+                    <input type="text" value={editTime} onChange={(e) => setEditTime(e.target.value)} disabled={saving} className={inputClass} />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
                     <label className={labelClass}>Descripción</label>
-                    <textarea rows="3" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className={inputClass}></textarea>
+                    <textarea rows="3" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} disabled={saving} className={inputClass}></textarea>
                 </div>
                 <div>
                     <label className={labelClass}>Dificultad</label>
-                    <select value={editDificulty} onChange={(e) => setEditDificulty(e.target.value)} className={`${inputClass} appearance-none`}>
+                    <select value={editDificulty} onChange={(e) => setEditDificulty(e.target.value)} disabled={saving} className={`${inputClass} appearance-none`}>
                         <option value="Fácil">Fácil</option>
                         <option value="Media">Media</option>
                         <option value="Difícil">Difícil</option>
@@ -166,7 +226,7 @@ async function fetchData() {
             <div>
                 <div className="flex justify-between items-center mb-4">
                     <label className="text-lg font-bold text-brand-900 font-primary">Ingredientes</label>
-                    <button type="button" onClick={() => setEditIngredientes([...editIngredientes, ""])} className="text-sm bg-brand-300 text-brand-900 px-3 cursor-pointer py-1 rounded-full font-semibold transition hover:bg-brand-400">
+                    <button type="button" disabled={saving} onClick={() => setEditIngredientes([...editIngredientes, ""])} className="text-sm bg-brand-300 text-brand-900 px-3 cursor-pointer py-1 rounded-full font-semibold transition hover:bg-brand-400">
                         Añadir ingrediente
                     </button>
                 </div>
@@ -174,12 +234,12 @@ async function fetchData() {
                     {editIngredientes.map((ingrediente, index) => (
                         <div key={index} className="flex gap-2 items-center">
                             <span className="text-gray-400 font-mono text-sm w-6 text-right">{index + 1}.</span>
-                            <input type="text" value={ingrediente} onChange={(e) => {
+                            <input type="text" value={ingrediente} disabled={saving} onChange={(e) => {
                                 const nuevosIngredientes = [...editIngredientes];
                                 nuevosIngredientes[index] = e.target.value;
                                 setEditIngredientes(nuevosIngredientes);
                             }} className={inputClass} />
-                            <button type="button" className="text-red-400 hover:text-red-600 px-2 font-bold" onClick={() => {
+                            <button type="button" disabled={saving} className="text-red-400 hover:text-red-600 px-2 font-bold" onClick={() => {
                                 const nuevos = editIngredientes.filter((_, i) => i !== index);
                                 setEditIngredientes(nuevos);
                             }}>✕</button>
@@ -191,7 +251,7 @@ async function fetchData() {
             <div className="bg-brand-300 p-6 rounded-xl">
                 <div className="flex justify-between items-center mb-4">
                     <label className="text-lg font-bold text-brand-900 font-primary">Pasos de preparación</label>
-                    <button type="button" onClick={() => setEditPasos([...editPasos, ""])} className="btn py-1 px-4 text-sm">
+                    <button type="button" disabled={saving} onClick={() => setEditPasos([...editPasos, ""])} className="btn py-1 px-4 text-sm">
                         Añadir paso
                     </button>
                 </div>
@@ -199,12 +259,12 @@ async function fetchData() {
                     {editPasos.map((paso, index) => (
                         <div key={index} className="flex gap-4 items-start">
                             <span className="text-3xl font-bold text-brand-900 font-secondary mt-1">{index + 1}º</span>
-                            <textarea rows="2" value={paso} onChange={(e) => {
+                            <textarea rows="2" value={paso} disabled={saving} onChange={(e) => {
                                 const nuevosPasos = [...editPasos];
                                 nuevosPasos[index] = e.target.value;
                                 setEditPasos(nuevosPasos);
                             }} className={inputClass} />
-                            <button type="button" className="text-red-400 hover:text-red-600 mt-3 font-bold" onClick={() => {
+                            <button type="button" disabled={saving} className="text-red-400 hover:text-red-600 mt-3 font-bold" onClick={() => {
                                 const nuevos = editPasos.filter((_, i) => i !== index);
                                 setEditPasos(nuevos);
                             }}>✕</button>
@@ -214,11 +274,11 @@ async function fetchData() {
             </div>
 
             <div className="flex gap-4 pt-6 justify-end">
-                <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-2 rounded-lg text-gray-600 font-medium transition cursor-pointer hover:bg-gray-100">
+                <button type="button" onClick={() => { setIsEditing(false); setNuevaImagen(null); }} disabled={saving} className="px-6 py-2 rounded-lg text-gray-600 font-medium transition cursor-pointer hover:bg-gray-100">
                     Cancelar
                 </button>
-                <button type="submit" className="px-8 py-2 rounded-lg bg-brand-900 text-white font-medium shadow-md cursor-pointer hover:bg-brand-800">
-                    Guardar cambios
+                <button type="submit" disabled={saving} className={`px-8 py-2 rounded-lg bg-brand-900 text-white font-medium shadow-md cursor-pointer transition ${saving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-brand-800'}`}>
+                    {saving ? "Guardando..." : "Guardar cambios"}
                 </button>
             </div>
           </form>
@@ -227,7 +287,6 @@ async function fetchData() {
         // --- VISTA DETALLE (TU DISEÑO ORIGINAL) ---
         <div className="flex flex-col md:flex-row gap-12 max-w-6xl mx-auto p-6">
           
-          {/* Columna Izquierda: Imagen, Ingredientes y Botones de acción */}
           <div className="flex flex-col gap-6 w-full md:w-5/12">
             <div className="rounded-lg"> 
               <img 
@@ -246,7 +305,6 @@ async function fetchData() {
               </ul>
             </div>
 
-            {/* Botones de acción originales debajo de ingredientes */}
             <div className="flex flex-wrap gap-3 mt-8 pt-4 text-sm">
               {ownRecipe && (
                 <>
@@ -257,14 +315,13 @@ async function fetchData() {
                 </>
               )}
               {admin && !ownRecipe && (
-                <button className="px-4 rounded-full font-semibold py-3 bg-gray-700 text-white shadow-md transition duration-300 cursor-pointer hover:bg-gray-800">
+                <button className="px-4 rounded-full font-semibold py-3 bg-red-700 text-white shadow-md transition duration-300 cursor-pointer hover:bg-red-800">
                   Ocultar receta
                 </button>
               )}
             </div>
           </div>
 
-          {/* Columna Derecha: Título, Favoritos, Autor y Pasos */}
           <div className="flex flex-col w-full md:w-7/12 relative text-brand-900">
             <div className="flex justify-between items-start mb-2 gap-4">
               <h1 className="text-5xl font-primary font-bold leading-tight text-brand-900">{receta.titulo}</h1>

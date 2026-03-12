@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export default function SubirReceta() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function SubirReceta() {
   const [ingredientes, setIngredientes] = useState([""]);
   const [pasos, setPasos] = useState([""]);
   const [loading, setLoading] = useState(false);
+  const [imagen, setImagen] = useState(null); // Estado para la imagen
 
   // Styles defined as constants
   const labelClass = "block text-xl font-bold text-brand-900 mb-2 font-primary";
@@ -35,6 +37,34 @@ export default function SubirReceta() {
     setLoading(true);
 
     try {
+      let imagen_url = null;
+
+      // LÓGICA DE SUBIDA DE IMAGEN A SUPABASE
+      if (imagen) {
+        const supabase = createClient();
+        const fileExt = imagen.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`; // Nombre único
+        const filePath = `${fileName}`;
+
+        // Subimos el archivo al bucket 'recetas'
+        const { error: uploadError } = await supabase.storage
+          .from('recetas')
+          .upload(filePath, imagen);
+
+        if (uploadError) {
+          alert("Error al subir la imagen a Supabase: " + uploadError.message);
+          setLoading(false);
+          return;
+        }
+
+        // Obtenemos la URL pública
+        const { data: publicUrlData } = supabase.storage
+          .from('recetas')
+          .getPublicUrl(filePath);
+
+        imagen_url = publicUrlData.publicUrl;
+      }
+
       const res = await fetch("/api/recetas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,6 +75,7 @@ export default function SubirReceta() {
           tiempo: time,
           ingredientes: ingredientesValidos,
           pasos: pasosValidos,
+          imagen_url: imagen_url, // Se añade la URL obtenida
         }),
       });
 
@@ -71,16 +102,15 @@ export default function SubirReceta() {
       <form onSubmit={guardarReceta} className="flex flex-col gap-6">
         <div>
           <label className={labelClass}>
-            Imagen de la receta (Próximamente)
+            Imagen de la receta
           </label>
           <input
             type="file"
-            disabled
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-200 file:text-gray-500 cursor-not-allowed opacity-50"
+            accept="image/*"
+            onChange={(e) => setImagen(e.target.files[0])}
+            disabled={loading}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-100 file:text-brand-900 cursor-pointer"
           />
-          <p className="text-sm text-gray-500 mt-1">
-            La subida de imágenes se activará en la siguiente fase.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

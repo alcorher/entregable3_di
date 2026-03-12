@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 function PerfilContent() {
   const searchParams = useSearchParams();
@@ -14,6 +15,7 @@ function PerfilContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editAbout, setEditAbout] = useState("");
+  const [avatar, setAvatar] = useState(null); // Nuevo estado para el archivo del avatar
 
   const labelClass = "block text-sm font-bold text-brand-900 mb-2 font-primary";
   const inputClass = "w-full p-3 rounded-lg border border-gray-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none transition-colors bg-white text-gray-700";
@@ -51,15 +53,41 @@ function PerfilContent() {
 
   const guardarCambios = async (e) => {
     e.preventDefault();
+    
+    let final_avatar_url = user.avatar_url; // Mantenemos el actual por si no se modifica
+
+    // LÓGICA DE SUBIDA DE AVATAR A SUPABASE
+    if (avatar) {
+      const supabase = createClient();
+      const fileExt = avatar.name.split('.').pop();
+      const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`; 
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatar, { upsert: true });
+
+      if (uploadError) {
+        alert("Error al subir el avatar: " + uploadError.message);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      final_avatar_url = publicUrlData.publicUrl;
+    }
+
     const res = await fetch("/api/perfil", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: editName, sobre_mi: editAbout }),
+      body: JSON.stringify({ nombre: editName, sobre_mi: editAbout, avatar_url: final_avatar_url }),
     });
 
     if (res.ok) {
-      setUser({ ...user, nombre: editName, sobre_mi: editAbout });
+      setUser({ ...user, nombre: editName, sobre_mi: editAbout, avatar_url: final_avatar_url });
       setIsEditing(false);
+      setAvatar(null); // Limpiamos el input file al guardar
     } else {
       alert("Error al guardar los cambios.");
     }
@@ -109,9 +137,18 @@ function PerfilContent() {
                 <label className={labelClass}>Foto de perfil</label>
                 <div className="flex flex-col items-center gap-4 p-4 rounded-xl ">
                   <div className="w-20 h-20 rounded-full overflow-hidden ">
-                    <img src={user.avatar_url} alt="Foto de perfil actual" className="w-full h-full object-cover" />
+                    <img 
+                      src={avatar ? URL.createObjectURL(avatar) : user.avatar_url} 
+                      alt="Foto de perfil actual" 
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
-                  <input type="file" disabled className="block w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-500 cursor-not-allowed opacity-50" />
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setAvatar(e.target.files[0])}
+                    className="block w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-100 file:text-brand-900 cursor-pointer" 
+                  />
                 </div>
               </div>
 
@@ -129,7 +166,7 @@ function PerfilContent() {
             </div>
 
             <div className="flex gap-4 pt-6 border-t border-gray-100 justify-end mt-2">
-              <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition">
+              <button type="button" onClick={() => { setIsEditing(false); setAvatar(null); }} className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition">
                 Cancelar
               </button>
               <button type="submit" className="px-8 py-2 rounded-lg bg-brand-900 text-white font-medium shadow-md cursor-pointer">
@@ -153,27 +190,38 @@ function PerfilContent() {
 
             <p className="text-brand-900">{user.sobre_mi}</p>
 
-            <div className="flex flex-col md:flex-row gap-6 my-10 justify-center mx-auto">
-              <a href={`/listaRecetas?userId=${user.id}`} className="w-full md:w-1/2">
-                <button className="btn w-full py-3">Lista de recetas</button>
+  <div className="flex flex-col md:flex-row gap-6 my-10 justify-center mx-auto">
+              
+              {/* 1. Lista de recetas: Ahora el <a> es el botón directamente */}
+              <a 
+                href={`/listaRecetas?userId=${user.id}`} 
+                className="btn w-full md:w-1/2 py-3 flex items-center justify-center text-center"
+              >
+                Lista de recetas
               </a>
 
+              {/* 2. Editar Perfil */}
               {ownUser && (
-                <button className="btn w-full md:w-1/2 py-3" onClick={() => setIsEditing(true)}>
+                <button 
+                  className="btn w-full md:w-1/2 py-3 flex items-center justify-center" 
+                  onClick={() => setIsEditing(true)}
+                >
                   Editar perfil
                 </button>
               )}
 
+              {/* 3. Banear / Desbloquear Usuario */}
               {admin && !ownUser && (
                 <button 
                   onClick={banearUsuario}
-                  className={`rounded-full font-semibold text-white shadow-md transition duration-300 w-full md:w-1/2 py-3 ${
+                  className={`rounded-full font-semibold text-sm text-white shadow-md transition duration-300 w-full md:w-1/2 py-3 flex items-center justify-center ${
                     user.bloqueado ? "bg-gray-600 hover:bg-gray-700" : "bg-red-700 hover:bg-red-800"
                   }`}
                 >
                   {user.bloqueado ? "Desbloquear usuario" : "Banear usuario"}
                 </button>
               )}
+              
             </div>
           </div>
         </div>

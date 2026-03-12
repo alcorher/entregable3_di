@@ -1,65 +1,84 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request) {
   try {
     const supabase = await createClient();
+    
+    // Obtenemos el usuario autenticado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    // Verificamos si nos pasan un userId por la URL (para ver el perfil de otros)
     const { searchParams } = new URL(request.url);
-    const urlUserId = searchParams.get('userId');
+    const userIdUrl = searchParams.get('userId');
 
-    // Vemos quién está haciendo la petición
-    const { data: { user } } = await supabase.auth.getUser();
+    // El ID a buscar será el de la URL o, si no hay, el del usuario logueado
+    const targetUserId = userIdUrl || user?.id;
 
-    let targetId = urlUserId;
-    let isOwnProfile = false;
-    let currentUserIsAdmin = false;
-
-    if (!targetId) {
-      if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-      targetId = user.id;
-      isOwnProfile = true;
-    } else if (user && user.id === targetId) {
-      isOwnProfile = true;
+    if (!targetUserId) {
+      return NextResponse.json({ error: "No autorizado o ID no proporcionado" }, { status: 401 });
     }
 
-    // Comprobamos si el usuario que mira la pantalla es admin
+    // Buscamos el perfil en la base de datos
+    const { data: perfil, error } = await supabase
+      .from("perfiles")
+      .select("*")
+      .eq("id", targetUserId)
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: "Perfil no encontrado" }, { status: 404 });
+    }
+
+    // Calculamos si el usuario actual es el dueño del perfil o si es admin
+    const isOwnProfile = user?.id === targetUserId;
+    
+    let currentUserIsAdmin = false;
     if (user) {
       const { data: currentProfile } = await supabase
         .from("perfiles")
         .select("is_admin")
         .eq("id", user.id)
         .single();
-      
-      if (currentProfile?.is_admin) currentUserIsAdmin = true;
+      currentUserIsAdmin = currentProfile?.is_admin || false;
     }
-
-    // Buscamos los datos del perfil a mostrar
-    const { data: perfil, error } = await supabase
-      .from("perfiles")
-      .select("*")
-      .eq("id", targetId)
-      .single();
-
-    if (error || !perfil) return NextResponse.json({ error: "Perfil no encontrado" }, { status: 404 });
 
     return NextResponse.json({ ...perfil, isOwnProfile, currentUserIsAdmin }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
 
 export async function PUT(request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    
+    // 1. Verificamos quién es el usuario logueado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    const { nombre, sobre_mi } = await request.json();
-    const { error } = await supabase.from("perfiles").update({ nombre, sobre_mi }).eq("id", user.id);
+    if (authError || !user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    // 2. Extraemos los datos que envía el frontend (¡INCLUYENDO avatar_url!)
+    const { nombre, sobre_mi, avatar_url } = await request.json();
+
+    // 3. Actualizamos la tabla 'perfiles' del usuario logueado
+    const { error } = await supabase
+      .from("perfiles")
+      .update({
+        nombre: nombre,
+        sobre_mi: sobre_mi,
+        avatar_url: avatar_url // <-- ESTA LÍNEA ES LA QUE TE FALTABA
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     return NextResponse.json({ message: "Perfil actualizado correctamente" }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
