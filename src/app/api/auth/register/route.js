@@ -6,7 +6,23 @@ export async function POST(request) {
     const { email, password, nombre } = await request.json();
     const supabase = await createClient(); 
 
-    // 1. Registramos al usuario en Supabase (auth.users)
+    // --- NUEVO: 1. Comprobamos si el nombre ya existe ---
+    // Usamos .ilike() para que "Pepe" y "pepe" cuenten como el mismo nombre
+    const { data: usuarioExistente } = await supabase
+      .from('perfiles')
+      .select('nombre')
+      .ilike('nombre', nombre)
+      .maybeSingle();
+
+    if (usuarioExistente) {
+      return NextResponse.json(
+        { error: "Ese nombre de usuario ya está en uso. Por favor, elige otro." }, 
+        { status: 400 }
+      );
+    }
+    // ----------------------------------------------------
+
+    // 2. Registramos al usuario en Supabase (auth.users)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -16,7 +32,7 @@ export async function POST(request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // 2. Creamos el perfil público en nuestra tabla "perfiles"
+    // 3. Creamos el perfil público en nuestra tabla "perfiles"
     if (authData.user) {
       const { error: profileError } = await supabase.from('perfiles').insert([
         {
