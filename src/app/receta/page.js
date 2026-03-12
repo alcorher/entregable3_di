@@ -505,7 +505,7 @@ function RecetaContent() {
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="btn px-4 cursor-pointer"
+                    className=" px-4 cursor-pointer text-xs font-semibold py-2 rounded-full bg-brand-900 text-white shadow-md transition duration-300 hover:bg-green-800"
                   >
                     Editar receta
                   </button>
