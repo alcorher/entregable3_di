@@ -164,9 +164,6 @@ function PerfilContent() {
 
     if (res.ok) {
       setUser({ ...user, bloqueado: !user.bloqueado });
-      alert(
-        `Usuario ${!user.bloqueado ? "bloqueado" : "desbloqueado"} correctamente.`,
-      );
     } else {
       const errorData = await res.json();
       alert("Error: " + errorData.error);

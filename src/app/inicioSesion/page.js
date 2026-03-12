@@ -25,7 +25,6 @@ export default function Login() {
       });
 
       if (res.ok) {
-        alert("¡Bienvenido de nuevo!");
         router.push("/home"); // Redirige a la página principal tras loguearse
       } else {
         const errorData = await res.json();

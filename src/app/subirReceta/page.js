@@ -80,7 +80,7 @@ export default function SubirReceta() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titulo: nombreLimpio, // Enviamos los datos limpios sin espacios extra
+          titulo: nombreLimpio, 
           descripcion: descripcionLimpia,
           dificultad: dificulty,
           tiempo: timeLimpio,
@@ -91,8 +91,7 @@ export default function SubirReceta() {
       });
 
       if (res.ok) {
-        alert("¡Receta publicada con éxito!");
-        router.push("/home"); // Te redirige a la página principal
+        router.push("/home");
       } else {
         const errorData = await res.json();
         alert("Error al guardar: " + errorData.error);

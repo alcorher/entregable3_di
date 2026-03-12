@@ -30,7 +30,6 @@ export default function Register() {
       });
 
       if (res.ok) {
-        alert("¡Registro exitoso! Redirigiendo al inicio de sesión...");
         router.push("/inicioSesion"); 
       } else {
         const errorData = await res.json();

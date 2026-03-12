@@ -180,7 +180,6 @@ function RecetaContent() {
 
         setIsEditing(false);
         setNuevaImagen(null);
-        alert("Receta actualizada con éxito.");
       } else {
         const errorData = await res.json();
         alert("Hubo un error al guardar los cambios: " + errorData.error);
@@ -226,7 +225,6 @@ function RecetaContent() {
 
     if (res.ok) {
       setReceta({ ...receta, oculta: nuevoEstado });
-      alert(`Receta ${nuevoEstado ? "ocultada" : "visible"} correctamente.`);
     } else {
       const errorData = await res.json();
       alert("Error: " + errorData.error);
