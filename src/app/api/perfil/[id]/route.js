@@ -70,7 +70,6 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "La sección 'Sobre mí' no puede exceder los 300 caracteres." }, { status: 400 });
     }
 
-    // Actualizamos siempre usando el user.id autenticado por seguridad (para que nadie edite perfiles de otros)
     const { error } = await supabase
       .from("perfiles")
       .update({

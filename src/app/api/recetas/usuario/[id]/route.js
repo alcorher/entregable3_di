@@ -3,7 +3,6 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request, { params }) {
   try {
-    // IMPORTANTE: En Next 16 usamos await params
     const resolvedParams = await params;
     const userId = resolvedParams.id;
 

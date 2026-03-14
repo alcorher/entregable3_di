@@ -1,11 +1,11 @@
 'use client';
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import RecetaCard from "../../Receta"; // Puede que tengas que ajustar esta ruta dependiendo de dónde esté Receta.js
+import RecetaCard from "../../Receta"; 
 
 export default function ListaRecetasPage() {
   const params = useParams();
-  const userId = params.id; // Obtenemos el ID de la ruta dinámica
+  const userId = params.id; 
 
   const [recipes, setRecipes] = useState([]);
   const [username, setUsername] = useState("Cargando...");
@@ -20,7 +20,6 @@ export default function ListaRecetasPage() {
       }
 
       try {
-        // ACTUALIZADO: Llamamos a la API dinámica
         const res = await fetch(`/api/recetas/usuario/${userId}`);
         
         if (res.ok) {

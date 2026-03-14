@@ -30,9 +30,8 @@ export default function PerfilUsuarioPage() {
 
   useEffect(() => {
     async function fetchPerfil() {
-      if (!userIdFromUrl) return; // Validación extra
+      if (!userIdFromUrl) return; 
       try {
-        // ACTUALIZADO: Fetch a la nueva ruta dinámica de la API
         const res = await fetch(`/api/perfil/${userIdFromUrl}`);
 
         if (res.ok) {
@@ -112,7 +111,6 @@ export default function PerfilUsuarioPage() {
       final_avatar_url = uploadData.url;
     }
 
-    // ACTUALIZADO: Fetch PUT a la nueva ruta dinámica
     const res = await fetch(`/api/perfil/${userIdFromUrl}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
