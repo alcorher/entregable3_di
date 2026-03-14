@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 function Usuario({ user }) {
   return (
     <a
-      href={`/perfilUsuario?userId=${user.id}`}
+      href={`/perfilUsuario/${user.id}`}
       className="block h-full group cursor-pointer"
     >
       <div

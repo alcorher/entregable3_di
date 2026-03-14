@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -26,6 +27,7 @@ export async function GET() {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
+
 export async function POST(request) {
   try {
     const supabase = await createClient();
@@ -40,27 +42,6 @@ export async function POST(request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ message: "Añadido a favoritos" }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
-  }
-}
-export async function DELETE(request) {
-  try {
-    const supabase = await createClient();
-    const { searchParams } = new URL(request.url);
-    const recetaId = searchParams.get('id');
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
-    const { error } = await supabase
-      .from('favoritos')
-      .delete()
-      .eq('usuario_id', user.id)
-      .eq('receta_id', recetaId);
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ message: "Eliminado" }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }

@@ -1,6 +1,9 @@
+import Link from "next/link"; // Importamos Link de Next.js
+
 export default function RecetaCard({ recipe }) {
   return (
-    <a href={`/receta?id=${recipe.id}`} className="block h-full">
+    // ACTUALIZADO: Usamos Link y la ruta dinámica
+    <Link href={`/receta/${recipe.id}`} className="block h-full">
       <div
         className="
         flex flex-col
@@ -39,6 +42,6 @@ export default function RecetaCard({ recipe }) {
           </span>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }

@@ -2,6 +2,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
+import Link from "next/link";
 
 export default function NavBar() {
   const location = usePathname();
@@ -9,24 +10,33 @@ export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   const supabase = createClient();
-  const [avatarUrl, setAvatarUrl] = useState("https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc");
+  const [avatarUrl, setAvatarUrl] = useState(
+    "https://imgs.search.brave.com/gFkNOZO5nDNB1qgQXJhuQv8LISNnf6cFG3Si0sWA_kg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMzEv/NjA2LzQ4NS9zbWFs/bC9jaGVmLWF2YXRh/ci1pbHVzdHJhdGlv/bi1mcmVlLXZlY3Rv/ci5qcGc",
+  );
 
   useEffect(() => {
     async function checkAuthAndFetchAvatar() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const isPublicPage = location === "/inicioSesion" || location === "/registro" || location === "/";
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const isPublicPage =
+          location === "/inicioSesion" ||
+          location === "/registro" ||
+          location === "/";
         if (!session && !isPublicPage) {
           router.push("/registro");
           return;
         }
         if (session && !isPublicPage) {
-          const res = await fetch("/api/perfil");
+          const res = await fetch("/api/perfil/me");
           if (res.ok) {
             const data = await res.json();
             if (data.bloqueado) {
               await supabase.auth.signOut();
-              alert("Tu cuenta ha sido bloqueada por un administrador. Se ha cerrado tu sesión por motivos de seguridad.");
+              alert(
+                "Tu cuenta ha sido bloqueada por un administrador. Se ha cerrado tu sesión por motivos de seguridad.",
+              );
               router.push("/inicioSesion");
               return;
             }
@@ -78,20 +88,17 @@ export default function NavBar() {
 
   return (
     <nav className="bg-brand-900 text-white px-5 py-3">
-      
       <div className="flex items-center justify-between w-full">
-        
         <div className="flex-1">
-          <a href="/home" className="flex items-center gap-2 w-fit">
+          <Link href="/home" className="flex items-center gap-2 w-fit">
             <img
               src="/images/logo.png"
               className="h-10 w-auto ps-2"
               alt="Logo"
             />
-          </a>
+          </Link>
         </div>
 
-        
         <div className="hidden md:flex justify-center shrink-0">
           <form
             onSubmit={handleSearch}
@@ -129,9 +136,8 @@ export default function NavBar() {
           </form>
         </div>
 
-        
         <div className="hidden md:flex flex-1 justify-end gap-6 items-center pe-2">
-          <a href="/subirReceta">
+          <Link href="/subirReceta">
             <svg
               width="25"
               height="25"
@@ -141,9 +147,9 @@ export default function NavBar() {
             >
               <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z" />
             </svg>
-          </a>
+          </Link>
 
-          <a href="/favoritos">
+          <Link href="/favoritos">
             <svg
               width="25"
               height="25"
@@ -153,20 +159,19 @@ export default function NavBar() {
             >
               <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314" />
             </svg>
-          </a>
+          </Link>
 
-          <a href="/perfilUsuario">
+          <Link href="/perfilUsuario/me">
             <img
               src={avatarUrl}
               alt="Perfil"
               className="rounded-full h-10 w-10 object-cover border-2 border-transparent hover:border-white transition"
             />
-          </a>
+          </Link>
 
-          
           <button
             onClick={handleSignOut}
-            className="hover:text-red-400 transition cursor-pointer flex items-center text white"
+            className="hover:text-red-400 transition cursor-pointer flex items-center text-white"
             title="Cerrar sesión"
           >
             <svg
@@ -195,7 +200,6 @@ export default function NavBar() {
           </button>
         </div>
 
-        
         <div className="md:hidden flex-1 flex justify-end">
           <button
             className="flex flex-col gap-1 cursor-pointer"
@@ -245,14 +249,15 @@ export default function NavBar() {
             </button>
           </form>
 
-          <a href="/subirReceta" className="py-2 border-b border-white/20">
+          <Link href="/subirReceta" className="py-2 border-b border-white/20">
             Nueva Receta
-          </a>
-          <a href="/favoritos" className="py-2 border-b border-white/20">
+          </Link>
+          <Link href="/favoritos" className="py-2 border-b border-white/20">
             Favoritos
-          </a>
-          <a
-            href="/perfilUsuario"
+          </Link>
+
+          <Link
+            href="/perfilUsuario/me"
             className="py-2 flex items-center gap-2 border-b border-white/20"
           >
             <img
@@ -261,7 +266,7 @@ export default function NavBar() {
               className="h-6 w-6 rounded-full object-cover"
             />
             Perfil
-          </a>
+          </Link>
 
           <button
             onClick={handleSignOut}

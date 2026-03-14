@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
-export async function GET(request) {
+export async function GET(request, { params }) {
   try {
     const supabase = await createClient();
-    const { searchParams } = new URL(request.url);
-    const recetaId = searchParams.get('id');
+    const { id: recetaId } = await params;
 
     if (!recetaId) {
       return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
@@ -55,16 +54,17 @@ export async function GET(request) {
   }
 }
 
-export async function PUT(request) {
+export async function PUT(request, { params }) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { id: recetaId } = await params;
 
     if (authError || !user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const { id, titulo, descripcion, tiempo, dificultad, ingredientes, pasos, imagen_url } = await request.json();
+    const { titulo, descripcion, tiempo, dificultad, ingredientes, pasos, imagen_url } = await request.json();
     const tituloLimpio = titulo?.trim() || "";
     const descripcionLimpia = descripcion?.trim() || "";
     const tiempoLimpio = tiempo?.trim() || "";
@@ -97,7 +97,7 @@ export async function PUT(request) {
         pasos: JSON.stringify(pasosValidos),
         imagen_url: imagen_url
       })
-      .eq('id', id)
+      .eq('id', recetaId)
       .eq('autor_id', user.id); 
 
     if (error) {
@@ -112,20 +112,14 @@ export async function PUT(request) {
   }
 }
 
-export async function DELETE(request) {
+export async function DELETE(request, { params }) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { id: recetaId } = await params;
 
     if (authError || !user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const recetaId = searchParams.get('id');
-
-    if (!recetaId) {
-      return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
     }
 
     const { error } = await supabase
@@ -146,10 +140,11 @@ export async function DELETE(request) {
   }
 }
 
-export async function PATCH(request) {
+export async function PATCH(request, { params }) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { id: recetaId } = await params;
 
     if (authError || !user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -163,17 +158,12 @@ export async function PATCH(request) {
     if (!perfil?.is_admin) {
       return NextResponse.json({ error: "No tienes permisos de administrador" }, { status: 403 });
     }
-    const { searchParams } = new URL(request.url);
-    const recetaId = searchParams.get('id');
-    const { oculto } = await request.json();
-
-    if (!recetaId) {
-      return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
-    }
+    
+    const { oculta } = await request.json(); 
 
     const { error } = await supabase
       .from("recetas")
-      .update({ oculta: oculto })
+      .update({ oculta: oculta })
       .eq('id', recetaId);
 
     if (error) {

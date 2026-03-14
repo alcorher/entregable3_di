@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
-export async function GET(request) {
+export async function GET(request, { params }) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    // IMPORTANTE: En Next 16 usamos await params
+    const resolvedParams = await params;
+    const userId = resolvedParams.id;
 
     if (!userId) {
       return NextResponse.json({ error: "Falta el ID del usuario en la URL" }, { status: 400 });
@@ -17,6 +18,7 @@ export async function GET(request) {
       .select("nombre")
       .eq("id", userId)
       .single();
+
     const { data: recetas, error } = await supabase
       .from("recetas")
       .select(`*, perfiles (nombre, avatar_url)`)

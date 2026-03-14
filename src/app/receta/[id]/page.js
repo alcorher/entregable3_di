@@ -1,11 +1,11 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-function RecetaContent() {
-  const searchParams = useSearchParams();
+export default function RecetaPage() {
+  const params = useParams();
   const router = useRouter();
-  const recetaId = searchParams.get("id");
+  const recetaId = params.id;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,7 +34,7 @@ function RecetaContent() {
     async function fetchData() {
       if (!recetaId) return setLoading(false);
       try {
-        const res = await fetch(`/api/recetas/detalle?id=${recetaId}`);
+        const res = await fetch(`/api/recetas/${recetaId}`);
         if (res.ok) {
           const data = await res.json();
 
@@ -77,7 +77,7 @@ function RecetaContent() {
 
   const toggleFavorito = async () => {
     const method = isFavorite ? "DELETE" : "POST";
-    const url = isFavorite ? `/api/favoritos?id=${recetaId}` : "/api/favoritos";
+    const url = isFavorite ? `/api/favoritos/${recetaId}` : "/api/favoritos";
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -95,7 +95,9 @@ function RecetaContent() {
     const timeLimpio = editTime.trim();
 
     if (!nombreLimpio || !descripcionLimpia || !timeLimpio) {
-      setErrorMsg("Por favor, completa el nombre, la descripción y el tiempo con texto válido.");
+      setErrorMsg(
+        "Por favor, completa el nombre, la descripción y el tiempo con texto válido.",
+      );
       return;
     }
 
@@ -147,16 +149,15 @@ function RecetaContent() {
         final_imagen_url = uploadData.url;
       }
 
-      const res = await fetch("/api/recetas/detalle", {
+      const res = await fetch(`/api/recetas/${recetaId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: recetaId,
-          titulo: nombreLimpio, 
+          titulo: nombreLimpio,
           descripcion: descripcionLimpia,
           tiempo: timeLimpio,
           dificultad: editDificulty,
-          ingredientes: ingredientesValidos, 
+          ingredientes: ingredientesValidos,
           pasos: pasosValidos,
           imagen_url: final_imagen_url,
         }),
@@ -200,10 +201,7 @@ function RecetaContent() {
       )
     )
       return;
-    const res = await fetch(
-      `/api/recetas/detalle?id=${recetaId}&action=delete`,
-      { method: "DELETE" },
-    );
+    const res = await fetch(`/api/recetas/${recetaId}`, { method: "DELETE" });
     if (res.ok) router.push("/home");
   };
 
@@ -218,7 +216,7 @@ function RecetaContent() {
     )
       return;
 
-    const res = await fetch(`/api/recetas/detalle?id=${recetaId}`, {
+    const res = await fetch(`/api/recetas/${recetaId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ oculta: nuevoEstado }),
@@ -228,7 +226,7 @@ function RecetaContent() {
       setReceta({ ...receta, oculta: nuevoEstado });
     } else {
       const errorData = await res.json();
-      setErrorMsg("Error: " + errorData.error); 
+      setErrorMsg("Error: " + errorData.error);
     }
   };
 
@@ -472,9 +470,9 @@ function RecetaContent() {
         <div className="flex flex-col md:flex-row gap-12 max-w-6xl mx-auto p-6">
           <div className="flex flex-col gap-6 w-full md:w-5/12">
             {errorMsg && (
-                <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-2 font-medium text-sm text-center">
-                  {errorMsg}
-                </div>
+              <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-2 font-medium text-sm text-center">
+                {errorMsg}
+              </div>
             )}
             <div className="rounded-lg">
               <img
@@ -548,7 +546,7 @@ function RecetaContent() {
             <div
               className="flex items-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition"
               onClick={() =>
-                router.push(`/perfilUsuario?userId=${receta.autor_id}`)
+                router.push(`/perfilUsuario/${receta.autor_id}`)
               }
             >
               <img
@@ -604,19 +602,5 @@ function RecetaContent() {
         </div>
       )}
     </>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense
-      fallback={
-        <div className="p-10 text-center font-bold text-xl text-brand-900">
-          Cargando receta...
-        </div>
-      }
-    >
-      <RecetaContent />
-    </Suspense>
   );
 }

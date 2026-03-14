@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link"; // Importamos Link de Next.js para mejorar la navegación
 
-function PerfilContent() {
-  const searchParams = useSearchParams();
-  const userIdFromUrl = searchParams.get("userId");
+export default function PerfilUsuarioPage() {
+  const params = useParams();
+  const userIdFromUrl = params.id;
 
   const [user, setUser] = useState({
     id: "",
@@ -29,11 +30,10 @@ function PerfilContent() {
 
   useEffect(() => {
     async function fetchPerfil() {
+      if (!userIdFromUrl) return; // Validación extra
       try {
-        const endpoint = userIdFromUrl
-          ? `/api/perfil?userId=${userIdFromUrl}`
-          : "/api/perfil";
-        const res = await fetch(endpoint);
+        // ACTUALIZADO: Fetch a la nueva ruta dinámica de la API
+        const res = await fetch(`/api/perfil/${userIdFromUrl}`);
 
         if (res.ok) {
           const data = await res.json();
@@ -52,7 +52,7 @@ function PerfilContent() {
           setEditName(data.nombre);
           setEditAbout(data.sobre_mi || "");
         } else {
-          if (!userIdFromUrl) window.location.href = "/inicioSesion";
+          window.location.href = "/inicioSesion";
         }
       } catch (error) {
         console.error("Error al cargar perfil");
@@ -112,7 +112,8 @@ function PerfilContent() {
       final_avatar_url = uploadData.url;
     }
 
-    const res = await fetch("/api/perfil", {
+    // ACTUALIZADO: Fetch PUT a la nueva ruta dinámica
+    const res = await fetch(`/api/perfil/${userIdFromUrl}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -295,12 +296,13 @@ function PerfilContent() {
             <p className="text-brand-900">{user.sobre_mi}</p>
 
             <div className="flex flex-col md:flex-row gap-6 my-10 justify-center mx-auto">
-              <a
+              {/* Hemos actualizado este <a> a un <Link> de Next.js */}
+              <Link
                 href={`/listaRecetas?userId=${user.id}`}
                 className="btn w-full md:w-1/2 py-3 flex items-center justify-center text-center"
               >
                 Lista de recetas
-              </a>
+              </Link>
 
               {ownUser && (
                 <button
@@ -328,15 +330,5 @@ function PerfilContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense
-      fallback={<div className="p-10 text-center">Cargando la página...</div>}
-    >
-      <PerfilContent />
-    </Suspense>
   );
 }

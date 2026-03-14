@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-export async function GET(request) {
+export async function GET(request, { params }) {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    const { searchParams } = new URL(request.url);
-    const userIdUrl = searchParams.get('userId');
-    const targetUserId = userIdUrl || user?.id;
+    const { data: { user } } = await supabase.auth.getUser();
+    
+
+    let { id: targetUserId } = await params;
+
+
+    // Para acceder al perfil propio
+    if (targetUserId === 'me') {
+      targetUserId = user?.id;
+    }
 
     if (!targetUserId) {
       return NextResponse.json({ error: "No autorizado o ID no proporcionado" }, { status: 401 });
@@ -41,7 +47,7 @@ export async function GET(request) {
   }
 }
 
-export async function PUT(request) {
+export async function PUT(request, { params }) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -64,6 +70,7 @@ export async function PUT(request) {
       return NextResponse.json({ error: "La sección 'Sobre mí' no puede exceder los 300 caracteres." }, { status: 400 });
     }
 
+    // Actualizamos siempre usando el user.id autenticado por seguridad (para que nadie edite perfiles de otros)
     const { error } = await supabase
       .from("perfiles")
       .update({
