@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request, { params }) {
@@ -7,7 +6,7 @@ export async function GET(request, { params }) {
     const { id: recetaId } = await params;
 
     if (!recetaId) {
-      return NextResponse.json({ error: "ID no proporcionado" }, { status: 400 });
+      return Response.json({ error: "ID no proporcionado" }, { status: 400 });
     }
 
     const { data: receta, error } = await supabase
@@ -25,11 +24,11 @@ export async function GET(request, { params }) {
 
     if (error) {
       console.error("Error de Supabase:", error);
-      return NextResponse.json({ error: "Error en la consulta a la base de datos" }, { status: 400 });
+      return Response.json({ error: "Error en la consulta a la base de datos" }, { status: 400 });
     }
 
     if (!receta) {
-      return NextResponse.json({ error: "La receta no existe" }, { status: 404 });
+      return Response.json({ error: "La receta no existe" }, { status: 404 });
     }
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -46,11 +45,11 @@ export async function GET(request, { params }) {
       if (currentProfile?.is_admin) currentUserIsAdmin = true;
     }
 
-    return NextResponse.json({ receta, isOwnRecipe, currentUserIsAdmin }, { status: 200 });
+    return Response.json({ receta, isOwnRecipe, currentUserIsAdmin }, { status: 200 });
     
   } catch (error) {
     console.error("Error crítico en API GET:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
 
@@ -61,7 +60,7 @@ export async function PUT(request, { params }) {
     const { id: recetaId } = await params;
 
     if (authError || !user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
     const { titulo, descripcion, tiempo, dificultad, ingredientes, pasos, imagen_url } = await request.json();
@@ -70,20 +69,20 @@ export async function PUT(request, { params }) {
     const tiempoLimpio = tiempo?.trim() || "";
 
     if (!tituloLimpio || !descripcionLimpia || !tiempoLimpio) {
-      return NextResponse.json({ error: "Faltan campos obligatorios o están en blanco." }, { status: 400 });
+      return Response.json({ error: "Faltan campos obligatorios o están en blanco." }, { status: 400 });
     }
     if (tituloLimpio.length > 60) {
-      return NextResponse.json({ error: "El título no puede exceder los 60 caracteres." }, { status: 400 });
+      return Response.json({ error: "El título no puede exceder los 60 caracteres." }, { status: 400 });
     }
     if (descripcionLimpia.length > 300) {
-      return NextResponse.json({ error: "La descripción no puede exceder los 300 caracteres." }, { status: 400 });
+      return Response.json({ error: "La descripción no puede exceder los 300 caracteres." }, { status: 400 });
     }
 
     const ingredientesValidos = Array.isArray(ingredientes) ? ingredientes.filter(i => typeof i === 'string' && i.trim() !== "") : [];
     const pasosValidos = Array.isArray(pasos) ? pasos.filter(p => typeof p === 'string' && p.trim() !== "") : [];
 
     if (ingredientesValidos.length === 0 || pasosValidos.length === 0) {
-      return NextResponse.json({ error: "Debe haber al menos un ingrediente y un paso válido." }, { status: 400 });
+      return Response.json({ error: "Debe haber al menos un ingrediente y un paso válido." }, { status: 400 });
     }
 
     const { error } = await supabase
@@ -102,13 +101,13 @@ export async function PUT(request, { params }) {
 
     if (error) {
       console.error("Error al actualizar la receta:", error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "Receta actualizada correctamente" }, { status: 200 });
+    return Response.json({ message: "Receta actualizada correctamente" }, { status: 200 });
   } catch (error) {
     console.error("Error crítico en API PUT:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
 
@@ -119,7 +118,7 @@ export async function DELETE(request, { params }) {
     const { id: recetaId } = await params;
 
     if (authError || !user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
     const { error } = await supabase
@@ -130,13 +129,13 @@ export async function DELETE(request, { params }) {
 
     if (error) {
       console.error("Error al eliminar la receta:", error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "Receta eliminada correctamente" }, { status: 200 });
+    return Response.json({ message: "Receta eliminada correctamente" }, { status: 200 });
   } catch (error) {
     console.error("Error crítico en API DELETE:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
 
@@ -147,7 +146,7 @@ export async function PATCH(request, { params }) {
     const { id: recetaId } = await params;
 
     if (authError || !user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      return Response.json({ error: "No autorizado" }, { status: 401 });
     }
     const { data: perfil } = await supabase
       .from("perfiles")
@@ -156,7 +155,7 @@ export async function PATCH(request, { params }) {
       .single();
 
     if (!perfil?.is_admin) {
-      return NextResponse.json({ error: "No tienes permisos de administrador" }, { status: 403 });
+      return Response.json({ error: "No tienes permisos de administrador" }, { status: 403 });
     }
     
     const { oculta } = await request.json(); 
@@ -168,12 +167,12 @@ export async function PATCH(request, { params }) {
 
     if (error) {
       console.error("Error al cambiar visibilidad:", error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "Visibilidad de la receta actualizada" }, { status: 200 });
+    return Response.json({ message: "Visibilidad de la receta actualizada" }, { status: 200 });
   } catch (error) {
     console.error("Error crítico en API PATCH:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

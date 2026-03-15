@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server'; 
 
 export async function POST(request) {
@@ -8,10 +7,10 @@ export async function POST(request) {
     const nombreLimpio = nombre?.trim() || "";
     
     if (!nombreLimpio) {
-      return NextResponse.json({ error: "El nombre no puede estar en blanco." }, { status: 400 });
+      return Response.json({ error: "El nombre no puede estar en blanco." }, { status: 400 });
     }
     if (nombreLimpio.length > 30) {
-      return NextResponse.json({ error: "El nombre no puede exceder los 30 caracteres." }, { status: 400 });
+      return Response.json({ error: "El nombre no puede exceder los 30 caracteres." }, { status: 400 });
     }
     const { data: usuarioExistente } = await supabase
       .from('perfiles')
@@ -20,7 +19,7 @@ export async function POST(request) {
       .maybeSingle();
 
     if (usuarioExistente) {
-      return NextResponse.json(
+      return Response.json(
         { error: "Ese nombre de usuario ya está en uso. Por favor, elige otro." }, 
         { status: 400 }
       );
@@ -31,7 +30,7 @@ export async function POST(request) {
     });
 
     if (authError) {
-      return NextResponse.json({ error: authError.message }, { status: 400 });
+      return Response.json({ error: authError.message }, { status: 400 });
     }
     if (authData.user) {
       const { error: profileError } = await supabase.from('perfiles').insert([
@@ -44,13 +43,13 @@ export async function POST(request) {
       ]);
 
       if (profileError) {
-        return NextResponse.json({ error: "Usuario registrado, pero hubo un error al crear su perfil" }, { status: 500 });
+        return Response.json({ error: "Usuario registrado, pero hubo un error al crear su perfil" }, { status: 500 });
       }
     }
 
-    return NextResponse.json({ message: "Registro exitoso", user: authData.user }, { status: 200 });
+    return Response.json({ message: "Registro exitoso", user: authData.user }, { status: 200 });
     
   } catch (error) {
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

@@ -1,11 +1,10 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
 export async function PATCH(request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    if (!user) return Response.json({ error: "No autorizado" }, { status: 401 });
     const { data: adminProfile } = await supabase
       .from("perfiles")
       .select("is_admin")
@@ -13,7 +12,7 @@ export async function PATCH(request) {
       .single();
 
     if (!adminProfile?.is_admin) {
-      return NextResponse.json({ error: "No tienes permisos de administrador" }, { status: 403 });
+      return Response.json({ error: "No tienes permisos de administrador" }, { status: 403 });
     }
     const { targetUserId, bloqueado } = await request.json();
 
@@ -22,10 +21,10 @@ export async function PATCH(request) {
       .update({ bloqueado: bloqueado })
       .eq("id", targetUserId);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return Response.json({ error: error.message }, { status: 400 });
 
-    return NextResponse.json({ message: "Operación exitosa" }, { status: 200 });
+    return Response.json({ message: "Operación exitosa" }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }

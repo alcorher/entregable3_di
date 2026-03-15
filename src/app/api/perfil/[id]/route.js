@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request, { params }) {
@@ -7,29 +6,29 @@ export async function GET(request, { params }) {
     const { data: { user } } = await supabase.auth.getUser();
     
 
-    let { id: targetUserId } = await params;
+    let { id: userId } = await params;
 
 
     // Para acceder al perfil propio
-    if (targetUserId === 'me') {
-      targetUserId = user?.id;
+    if (userId === 'me') {
+      userId = user?.id;
     }
 
-    if (!targetUserId) {
-      return NextResponse.json({ error: "No autorizado o ID no proporcionado" }, { status: 401 });
+    if (!userId) {
+      return Response.json({ error: "No autorizado o ID no proporcionado" }, { status: 401 });
     }
 
     const { data: perfil, error } = await supabase
       .from("perfiles")
       .select("*")
-      .eq("id", targetUserId)
+      .eq("id", userId)
       .single();
 
     if (error) {
-      return NextResponse.json({ error: "Perfil no encontrado" }, { status: 404 });
+      return Response.json({ error: "Perfil no encontrado" }, { status: 404 });
     }
 
-    const isOwnProfile = user?.id === targetUserId;
+    const isOwnProfile = user?.id === userId;
     
     let currentUserIsAdmin = false;
     if (user) {
@@ -41,9 +40,9 @@ export async function GET(request, { params }) {
       currentUserIsAdmin = currentProfile?.is_admin || false;
     }
 
-    return NextResponse.json({ ...perfil, isOwnProfile, currentUserIsAdmin }, { status: 200 });
+    return Response.json({ ...perfil, isOwnProfile, currentUserIsAdmin }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
 
@@ -53,7 +52,7 @@ export async function PUT(request, { params }) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
     const { nombre, sobre_mi, avatar_url } = await request.json();
@@ -61,13 +60,13 @@ export async function PUT(request, { params }) {
     const sobreMiLimpio = sobre_mi?.trim() || null;
 
     if (!nombreLimpio) {
-      return NextResponse.json({ error: "El nombre no puede estar en blanco." }, { status: 400 });
+      return Response.json({ error: "El nombre no puede estar en blanco." }, { status: 400 });
     }
     if (nombreLimpio.length > 30) {
-      return NextResponse.json({ error: "El nombre no puede exceder los 30 caracteres." }, { status: 400 });
+      return Response.json({ error: "El nombre no puede exceder los 30 caracteres." }, { status: 400 });
     }
     if (sobreMiLimpio && sobreMiLimpio.length > 300) {
-      return NextResponse.json({ error: "La sección 'Sobre mí' no puede exceder los 300 caracteres." }, { status: 400 });
+      return Response.json({ error: "La sección 'Sobre mí' no puede exceder los 300 caracteres." }, { status: 400 });
     }
 
     const { error } = await supabase
@@ -80,11 +79,11 @@ export async function PUT(request, { params }) {
       .eq("id", user.id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "Perfil actualizado correctamente" }, { status: 200 });
+    return Response.json({ message: "Perfil actualizado correctamente" }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
@@ -6,7 +5,7 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    if (!user) return Response.json({ error: "No autorizado" }, { status: 401 });
 
     const { data, error } = await supabase
       .from('favoritos')
@@ -20,11 +19,11 @@ export async function GET() {
       .eq('usuario_id', user.id)
       .order('fecha_guardado', { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return Response.json({ error: error.message }, { status: 400 });
     const recetasFavoritas = data.map(f => f.recetas).filter(r => r !== null);
-    return NextResponse.json(recetasFavoritas, { status: 200 });
+    return Response.json(recetasFavoritas, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
@@ -32,7 +31,7 @@ export async function POST(request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    if (!user) return Response.json({ error: "No autorizado" }, { status: 401 });
 
     const { recetaId } = await request.json();
 
@@ -40,9 +39,9 @@ export async function POST(request) {
       .from('favoritos')
       .insert([{ usuario_id: user.id, receta_id: recetaId }]);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ message: "Añadido a favoritos" }, { status: 201 });
+    if (error) return Response.json({ error: error.message }, { status: 400 });
+    return Response.json({ message: "Añadido a favoritos" }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+    return Response.json({ error: "Error interno" }, { status: 500 });
   }
 }

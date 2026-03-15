@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request) {
@@ -12,7 +11,7 @@ export async function POST(request) {
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
     if (data.user) {
@@ -24,7 +23,7 @@ export async function POST(request) {
 
       if (perfilError) {
         await supabase.auth.signOut();
-        return NextResponse.json(
+        return Response.json(
           { error: "Error al verificar el estado de la cuenta." },
           { status: 500 },
         );
@@ -32,7 +31,7 @@ export async function POST(request) {
 
       if (perfil?.bloqueado) {
         await supabase.auth.signOut();
-        return NextResponse.json(
+        return Response.json(
           {
             error:
               "Tu cuenta ha sido bloqueada por un administrador. No puedes iniciar sesión.",
@@ -43,12 +42,12 @@ export async function POST(request) {
     }
 
     
-    return NextResponse.json(
+    return Response.json(
       { message: "Login exitoso", user: data.user },
       { status: 200 },
     );
   } catch (error) {
-    return NextResponse.json(
+    return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 },
     );

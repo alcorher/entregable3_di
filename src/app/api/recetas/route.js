@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request) {
@@ -29,16 +28,16 @@ export async function GET(request) {
     const { data, count, error } = await query;
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({
+    return Response.json({
       data: data,
       totalPages: Math.ceil((count || 0) / limit),
       currentPage: page
     }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
+    return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 },
     );
@@ -55,7 +54,7 @@ export async function POST(request) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
+      return Response.json(
         { error: "No autorizado. Inicia sesión para subir recetas." },
         { status: 401 },
       );
@@ -67,19 +66,19 @@ export async function POST(request) {
     const tiempoLimpio = tiempo?.trim() || "";
 
     if (!tituloLimpio || !descripcionLimpia || !tiempoLimpio) {
-      return NextResponse.json({ error: "Faltan campos obligatorios o están en blanco." }, { status: 400 });
+      return Response.json({ error: "Faltan campos obligatorios o están en blanco." }, { status: 400 });
     }
     if (tituloLimpio.length > 60) {
-      return NextResponse.json({ error: "El título no puede exceder los 60 caracteres." }, { status: 400 });
+      return Response.json({ error: "El título no puede exceder los 60 caracteres." }, { status: 400 });
     }
     if (descripcionLimpia.length > 300) {
-      return NextResponse.json({ error: "La descripción no puede exceder los 300 caracteres." }, { status: 400 });
+      return Response.json({ error: "La descripción no puede exceder los 300 caracteres." }, { status: 400 });
     }
     const ingredientesValidos = Array.isArray(ingredientes) ? ingredientes.filter(i => typeof i === 'string' && i.trim() !== "") : [];
     const pasosValidos = Array.isArray(pasos) ? pasos.filter(p => typeof p === 'string' && p.trim() !== "") : [];
 
     if (ingredientesValidos.length === 0 || pasosValidos.length === 0) {
-      return NextResponse.json({ error: "Debe haber al menos un ingrediente y un paso válido." }, { status: 400 });
+      return Response.json({ error: "Debe haber al menos un ingrediente y un paso válido." }, { status: 400 });
     }
 
     const { error } = await supabase.from("recetas").insert([
@@ -97,15 +96,15 @@ export async function POST(request) {
     ]);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json(
+    return Response.json(
       { message: "Receta creada con éxito" },
       { status: 201 },
     );
   } catch (error) {
-    return NextResponse.json(
+    return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 },
     );
