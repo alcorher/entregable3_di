@@ -6,11 +6,11 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Custom colors */
+  
   --color-brand-900: #31582B;
   --color-brand-600: #B5D9B0;
-  --color-brand-300: #B5D9B080; /* 50% opacity */
-  --color-brand-100: #B5D9B04D; /* 30% opacity */
+  --color-brand-300: #B5D9B080; 
+  --color-brand-100: #B5D9B04D; 
   --color-danger: #e3342f;
 
   --font-primary: 'Playfair Display';
@@ -23,7 +23,7 @@ html {
 }
 
 .btn {
-  @apply rounded-full font-semibold py-1 px-3  text-sm bg-brand-900 text-white shadow-md transition duration-300 cursor-pointer;
+  @apply rounded-full font-semibold py-2 px-3  text-sm bg-brand-900 text-white shadow-md transition duration-300 cursor-pointer;
 }
 
 

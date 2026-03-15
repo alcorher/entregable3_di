@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import RecetaCard from "../Receta.js";
-function ListaRecetasContent() {
-  const searchParams = useSearchParams();
-  const userId = searchParams.get("userId");
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import RecetaCard from "../../Receta"; 
+
+export default function ListaRecetasPage() {
+  const params = useParams();
+  const userId = params.id; 
 
   const [recipes, setRecipes] = useState([]);
   const [username, setUsername] = useState("Cargando...");
@@ -19,7 +20,7 @@ function ListaRecetasContent() {
       }
 
       try {
-        const res = await fetch(`/api/recetas/usuario?userId=${userId}`);
+        const res = await fetch(`/api/recetas/usuario/${userId}`);
         
         if (res.ok) {
           const data = await res.json();
@@ -40,7 +41,7 @@ function ListaRecetasContent() {
   }, [userId]);
 
   return (
-    <div>
+    <div className="min-h-screen pb-10">
       <h1 className="font-primary font-bold text-3xl text-brand-900 p-10 px-15">
         Lista recetas de {username}
       </h1>
@@ -59,12 +60,5 @@ function ListaRecetasContent() {
         </ul>
       )}
     </div>
-  );
-}
-export default function ListaRecetasPage() {
-  return (
-    <Suspense fallback={<div className="p-10 px-15 text-brand-900 text-xl font-bold">Cargando página...</div>}>
-      <ListaRecetasContent />
-    </Suspense>
   );
 }
