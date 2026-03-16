@@ -41,7 +41,7 @@ Para que funcione la conexión con la base de datos, hay que crear un archivo `.
 ```env
 NEXT_PUBLIC_SUPABASE_URL=url_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=clave_supabase
-
+```
 ## Requisitos
 
 - `Node.js`
@@ -68,3 +68,8 @@ npm run dev
 4. Abre `http://localhost:3000` en el navegador.
 
 ---
+
+> ## Datos de acceso
+> Si usas mi base de datos, la cuenta de administrador es:
+> - **Correo:** `admin@gmail.com`
+> - **Contraseña:** `123456`
